@@ -1,0 +1,163 @@
+function init()
+    m.top.observeField("visible", "onVisibleChange")
+    m.contentContainer = m.top.findNode("contentContainer")
+
+    m.poster = invalid
+    m.titleLabel = invalid
+    m.descriptionLabel = invalid
+    m.dimensionsLabel = invalid
+
+    m.imageInfoTask = invalid
+end function
+
+sub onVisibleChange()
+    if m.top.visible = true
+        m.top.setFocus(true)
+    end if
+end sub
+
+sub onContentChange()
+    content = m.top.content
+    if content = invalid then return
+
+    updatePoster(content)
+    updateTitleLabel(content)
+    updateDescriptionLabel(content)
+
+    hideDimensionsLabel()
+    fetchImageInfo(content)
+end sub
+
+sub fetchImageInfo(content as object)
+    imageId = content?.id
+    provider = content?.provider
+
+    if Common.Util.isEmptyString(imageId) then return
+    if Common.Util.isEmptyString(provider) then return
+
+    if m.imageInfoTask <> invalid
+        m.imageInfoTask.control = "stop"
+    end if
+
+    m.imageInfoTask = createObject("roSGNode", "imageInfoTask")
+    m.imageInfoTask.observeField("imageInfo", "onImageInfoReceived")
+    m.imageInfoTask.imageId = imageId
+    m.imageInfoTask.provider = provider
+    m.imageInfoTask.control = "run"
+end sub
+
+sub onImageInfoReceived(event as object)
+    imageInfo = event.getData()
+    if imageInfo = invalid then return
+
+    updateDimensionsLabel(imageInfo)
+end sub
+
+sub hideDimensionsLabel()
+    if m.dimensionsLabel <> invalid
+        m.dimensionsLabel.visible = false
+    end if
+end sub
+
+sub updatePoster(content as object)
+    posterUrl = content?.largeUrl
+    if Common.Util.isEmptyString(posterUrl)
+        if m.poster <> invalid
+            m.contentContainer.removeChild(m.poster)
+            m.poster = invalid
+        end if
+        return
+    end if
+
+    if m.poster = invalid
+        m.poster = m.contentContainer.createChild("Poster")
+        m.poster.height = 400
+        m.poster.loadHeight = 400
+        m.poster.loadDisplayMode = "scaleToFit"
+    end if
+
+    m.poster.uri = posterUrl
+end sub
+
+sub updateTitleLabel(content as object)
+    title = content?.title
+    if Common.Util.isEmptyString(title)
+        if m.titleLabel <> invalid
+            m.contentContainer.removeChild(m.titleLabel)
+            m.titleLabel = invalid
+        end if
+        return
+    end if
+
+    if m.titleLabel = invalid
+        m.titleLabel = m.contentContainer.createChild("Label")
+        m.titleLabel.width = 1000
+        m.titleLabel.maxLines = 1
+        m.titleLabel.font = "font:LargeBoldSystemFont"
+    end if
+
+    m.titleLabel.text = title
+    m.titleLabel.visible = true
+end sub
+
+sub updateDescriptionLabel(content as object)
+    description = content?.description
+    if Common.Util.isEmptyString(description)
+        if m.descriptionLabel <> invalid
+            m.contentContainer.removeChild(m.descriptionLabel)
+            m.descriptionLabel = invalid
+        end if
+        return
+    end if
+
+    if m.descriptionLabel = invalid
+        m.descriptionLabel = m.contentContainer.createChild("Label")
+        m.descriptionLabel.width = 1000
+        m.descriptionLabel.maxLines = 2
+        m.descriptionLabel.wrap = true
+        m.descriptionLabel.color = "0xCCCCCCFF"
+    end if
+
+    m.descriptionLabel.text = description
+    m.descriptionLabel.visible = true
+end sub
+
+sub updateDimensionsLabel(imageInfo as object)
+    width = imageInfo?.width
+    height = imageInfo?.height
+    if Common.Util.isEmptyString(width) or Common.Util.isEmptyString(height)
+        if m.dimensionsLabel <> invalid
+            m.contentContainer.removeChild(m.dimensionsLabel)
+            m.dimensionsLabel = invalid
+        end if
+        return
+    end if
+
+    if m.dimensionsLabel = invalid
+        m.dimensionsLabel = m.contentContainer.createChild("Label")
+        m.dimensionsLabel.width = 1000
+        m.dimensionsLabel.color = "0x888888FF"
+    end if
+
+    m.dimensionsLabel.text = "Original Dimensions: " + width + " x " + height
+    m.dimensionsLabel.visible = true
+end sub
+
+sub onDestroy()
+    if m.poster <> invalid
+        m.contentContainer.removeChild(m.poster)
+        m.poster = invalid
+    end if
+    if m.titleLabel <> invalid
+        m.contentContainer.removeChild(m.titleLabel)
+        m.titleLabel = invalid
+    end if
+    if m.descriptionLabel <> invalid
+        m.contentContainer.removeChild(m.descriptionLabel)
+        m.descriptionLabel = invalid
+    end if
+    if m.dimensionsLabel <> invalid
+        m.contentContainer.removeChild(m.dimensionsLabel)
+        m.dimensionsLabel = invalid
+    end if
+end sub

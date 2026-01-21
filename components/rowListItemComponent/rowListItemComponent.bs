@@ -1,0 +1,21 @@
+sub init()
+    m.poster = m.top.findNode("poster")
+    m.skeleton = m.top.findNode("skeleton")
+
+    m.poster.observeField("loadStatus", "onPosterLoadStatusChanged")
+end sub
+
+sub onContentSet()
+    content = m.top.itemContent
+    if content <> invalid
+        m.skeleton.visible = true
+        m.poster.uri = content.thumbnailUrl
+    end if
+end sub
+
+sub onPosterLoadStatusChanged(event as object)
+    loadStatus = event.getData()
+    if loadStatus = "ready"
+        m.skeleton.visible = false
+    end if
+end sub

@@ -1,0 +1,12 @@
+namespace NetworkService
+    function get(url as string) as object
+        xfer = createObject("roURLTransfer")
+        xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
+        xfer.setURL(url)
+
+        response = xfer.getToString()
+        json = parseJson(response)
+
+        return json
+    end function
+end namespace

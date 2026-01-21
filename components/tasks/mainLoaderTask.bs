@@ -1,0 +1,66 @@
+sub init()
+    m.top.functionName = "getContent"
+end sub
+
+sub getContent()
+    contentNode = createObject("roSGNode", "ContentNode")
+    m.top.content = contentNode
+
+    rowConfigs = HomePageConfig.getRows()
+    port = createObject("roMessagePort")
+    requestMap = {}
+    transfers = []
+
+    ' Start all requests in parallel
+    for each rowConfig in rowConfigs
+        url = ImageService.getUrlForRow(rowConfig, 1)
+        if url <> ""
+            xfer = createObject("roUrlTransfer")
+            xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
+            xfer.setMessagePort(port)
+            xfer.setUrl(url)
+
+            requestId = xfer.getIdentity().toStr()
+            requestMap[requestId] = rowConfig
+            transfers.push(xfer)
+
+            xfer.asyncGetToString()
+        end if
+    end for
+
+    ' Wait for all responses
+    requestsRemaining = requestMap.count()
+    while requestsRemaining > 0
+        msg = wait(0, port)
+
+        if type(msg) = "roUrlEvent"
+            requestId = msg.getSourceIdentity().toStr()
+            rowConfig = requestMap[requestId]
+
+            if rowConfig <> invalid and msg.getResponseCode() = 200
+                responseString = msg.getString()
+                response = parseJson(responseString)
+                images = ImageService.parseRowResponse(rowConfig, response)
+
+                if images.count() > 0
+                    rowNode = createObject("roSGNode", "ContentNode")
+                    rowNode.addFields({
+                        action: rowConfig.action,
+                        params: rowConfig.params,
+                        currentPage: 1,
+                        hasMore: images.count() >= HomePageConfig.PAGE_SIZE
+                    })
+                    rowNode.update({
+                        title: rowConfig.title,
+                        children: images
+                    }, true)
+                    contentNode.appendChild(rowNode)
+
+                    m.top.loading = false
+                end if
+            end if
+
+            requestsRemaining -= 1
+        end if
+    end while
+end sub

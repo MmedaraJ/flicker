@@ -1,0 +1,14 @@
+namespace GridScreen
+    sub show()
+        m.gridScreen = createObject("roSGNode", "gridScreen")
+        m.gridScreen.observeField("rowItemSelected", "onGridScreenItemSelected")
+        ScreenStack.show(m.gridScreen)
+    end sub
+end namespace
+
+sub onGridScreenItemSelected(event as object)
+    grid = event.getRoSGNode()
+    selectedIndex = event.getData()
+    rowContent = grid.content.getChild(selectedIndex[0])
+    DetailsScreen.show(rowContent, selectedIndex[1])
+end sub

@@ -1,0 +1,24 @@
+sub init()
+    m.top.backgroundURI = ""
+    m.top.backgroundColor = "0x000000FF"
+    m.loadingIndicator = m.top.findNode("loadingIndicator")
+    ScreenStack.init()
+    GridScreen.show()
+    ContentTask.start()
+end sub
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not press then return false
+
+    handled = false
+
+    if key = "back"
+        numberOfScreens = m.screenStack.count()
+        if numberOfScreens > 1
+            ScreenStack.close(invalid)
+            handled = true
+        end if
+    end if
+
+    return handled
+end function

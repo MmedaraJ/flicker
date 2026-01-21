@@ -1,0 +1,15 @@
+sub init()
+    m.top.functionName = "getImageInfo"
+end sub
+
+sub getImageInfo()
+    imageId = m.top.imageId
+    provider = m.top.provider
+
+    if imageId = "" then return
+
+    imageInfo = ImageService.getImageInfo(provider, imageId)
+    if imageInfo <> invalid
+        m.top.imageInfo = imageInfo
+    end if
+end sub

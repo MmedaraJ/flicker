@@ -1,0 +1,19 @@
+namespace FlickrConfig
+    const API_BASE_URL = "https://api.flickr.com/services/rest/"
+    const API_KEY = "452b3b7a5d806dcd110842e6649c604d"
+    const FORMAT = "json"
+
+    namespace Methods
+        const GET_RECENT = "flickr.photos.getRecent"
+        const SEARCH = "flickr.photos.search"
+        const GET_SIZES = "flickr.photos.getSizes"
+    end namespace
+
+    namespace ImageSize
+        const SMALL = "s"
+        const THUMBNAIL = "q"
+        const MEDIUM = "m"
+        const LARGE = "z"
+        const XLARGE = "b"
+    end namespace
+end namespace

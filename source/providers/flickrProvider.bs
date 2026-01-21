@@ -1,0 +1,92 @@
+namespace FlickrProvider
+    function getUrl(method as string, params as object, page as integer) as string
+        if method = "recent"
+            return _buildApiUrl(FlickrConfig.Methods.GET_RECENT, "", page)
+        else if method = "search"
+            return _buildApiUrl(FlickrConfig.Methods.SEARCH, "tags=" + params.tags, page)
+        end if
+        return ""
+    end function
+
+    function parseResponse(response as object) as object
+        if response <> invalid and response.photos <> invalid and response.photos.photo <> invalid
+            return _mapPhotos(response.photos.photo)
+        end if
+        return []
+    end function
+
+    function getImages(method as string, params as object, page as integer) as object
+        url = getUrl(method, params, page)
+        if url = "" then return []
+
+        response = NetworkService.get(url)
+        return parseResponse(response)
+    end function
+
+    function getImageInfo(imageId as string) as object
+        url = _buildApiUrl(FlickrConfig.Methods.GET_SIZES, "photo_id=" + imageId)
+        response = NetworkService.get(url)
+
+        if response <> invalid and response.sizes <> invalid and response.sizes.size <> invalid
+            sizes = response.sizes.size
+            imageInfo = {}
+
+            for i = sizes.count() - 1 to 0 step -1
+                size = sizes[i]
+                if size.label = "Original"
+                    imageInfo.width = size.width.toStr()
+                    imageInfo.height = size.height.toStr()
+                    imageInfo.originalUrl = size.source
+                    exit for
+                end if
+            end for
+
+            return imageInfo
+        end if
+
+        return invalid
+    end function
+
+    function _mapPhotos(photos as object) as object
+        images = []
+        for each photo in photos
+            images.push(_mapPhoto(photo))
+        end for
+        return images
+    end function
+
+    function _mapPhoto(photo as object) as object
+        description = ""
+        if photo.description <> invalid and photo.description._content <> invalid
+            description = photo.description._content
+        end if
+
+        return ImageModel.create({
+            id: photo.id,
+            provider: "flickr",
+            title: photo.title,
+            description: description,
+            thumbnailUrl: _buildImageUrl(photo, FlickrConfig.ImageSize.THUMBNAIL),
+            largeUrl: _buildImageUrl(photo, FlickrConfig.ImageSize.XLARGE)
+        })
+    end function
+
+    function _buildImageUrl(photo as object, size as string) as string
+        return "https://live.staticflickr.com/" + photo.server + "/" + photo.id + "_" + photo.secret + "_" + size + ".jpg"
+    end function
+
+    function _buildApiUrl(method as string, extraParams as string, page = 1 as integer) as string
+        url = FlickrConfig.API_BASE_URL
+        url += "?method=" + method
+        url += "&api_key=" + FlickrConfig.API_KEY
+        url += "&format=" + FlickrConfig.FORMAT
+        url += "&nojsoncallback=1"
+        url += "&per_page=" + (HomePageConfig.PAGE_SIZE).toStr()
+        url += "&page=" + page.toStr()
+        url += "&extras=description,o_dims"
+
+        if extraParams <> "" then url += "&" + extraParams
+
+        return url
+    end function
+end namespace

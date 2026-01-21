@@ -1,0 +1,66 @@
+namespace Common.Util
+    ' ###############################################################
+    ' #region TYPE CHECKERS
+
+    ' /**
+    ' *  Check if value is invalid
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isInvalid(obj as dynamic) as boolean
+        return obj = invalid or type(obj) = "<uninitialized>"
+    end function
+
+    ' /**
+    ' *  Check if value is type string
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isString(obj as dynamic) as boolean
+        if isInvalid(obj) then return false
+        objType = Type(obj)
+        return (objType = "roString" or objType = "String")
+    end function
+
+    ' /**
+    ' *  Check if value is type string and is empty
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isEmptyString(obj as dynamic) as boolean
+        isAString = isString(obj)
+        if not isAString then return true
+
+        return len(obj) = 0
+    end function
+
+    ' #endregion TYPE CHECKERS
+    ' ###############################################################
+
+    ' ###############################################################
+    ' #region GETTERS and SETTERS
+
+    ' /**
+    ' *  Returns an optional chaining value, or if the value is invalid, returns the defined default
+    ' *  value in the expected Type
+    ' *
+    ' *  @param {dynamic} targetValue - expected target is an Optional chaining value
+    ' *  @param {dynamic} defaultValue - returns a default value in the expected Type
+    ' *
+    ' *  @returns {dynamic} - the targetValue if not invalid, otherwise the defaultValue
+    ' */
+    function getValue(targetValue as dynamic, defaultValue as dynamic) as dynamic
+        if targetValue <> invalid then return targetValue
+
+        return defaultValue
+    end function
+
+    ' #endregion GETTERS and SETTERS
+    ' ###############################################################
+end namespace

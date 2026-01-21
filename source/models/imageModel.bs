@@ -1,0 +1,12 @@
+namespace ImageModel
+    function create(data as object) as object
+        return {
+            id: data.id,
+            provider: data.provider,
+            title: data.title,
+            description: data.description,
+            thumbnailUrl: data.thumbnailUrl,
+            largeUrl: data.largeUrl
+        }
+    end function
+end namespace

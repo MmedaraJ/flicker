@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "build": "bsc",
+    "deploy": "dotenv -e .env -- bash -c 'bsc --host $ROKU_HOST --password $ROKU_PASSWORD'"
+  },
+  "dependencies": {
+    "brighterscript": "^0.70.3"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.2"
+  }
+}

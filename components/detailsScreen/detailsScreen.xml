@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="detailsScreen" extends="Group" xsi:noNamespaceSchemaLocation="https://devtools.web.roku.com/schema/RokuSceneGraph.xsd">
+    <interface>
+        <field id="content" type="node" onChange="onContentChange" />
+    </interface>
+
+    <script type="text/brightscript" uri="pkg:/source/utils/common.bs" />
+
+    <children>
+        <LayoutGroup
+            id="contentContainer"
+            translation="[100, 80]"
+            layoutDirection="vert"
+            itemSpacings="[30]"
+        />
+    </children>
+</component>

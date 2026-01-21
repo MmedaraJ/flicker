@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="mainLoaderTask" extends="Task">
+    <script type="text/brightscript" uri="pkg:/source/config/homePageConfig.bs" />
+    <script type="text/brightscript" uri="pkg:/source/config/flickrConfig.bs" />
+    <script type="text/brightscript" uri="pkg:/source/network/networkService.bs" />
+    <script type="text/brightscript" uri="pkg:/source/models/imageModel.bs" />
+    <script type="text/brightscript" uri="pkg:/source/providers/flickrProvider.bs" />
+    <script type="text/brightscript" uri="pkg:/source/providers/providerFactory.bs" />
+    <script type="text/brightscript" uri="pkg:/source/services/imageService.bs" />
+    <interface>
+        <field id="content" type="node" />
+        <field id="loading" type="boolean" value="true" />
+    </interface>
+</component>

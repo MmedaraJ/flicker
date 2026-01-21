@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="loadingSpinner" extends="Group">
+    <children>
+        <Poster
+            id="spinnerImage"
+            width="80"
+            height="80"
+            translation="[-40, -40]"
+            scaleRotateCenter="[40, 40]"
+            uri="pkg:/images/spinner.png"
+        />
+        <Animation
+            id="spinAnimation"
+            duration="1"
+            repeat="true"
+            easeFunction="linear"
+        >
+            <FloatFieldInterpolator
+                key="[0.0, 1.0]"
+                keyValue="[0.0, 6.283185]"
+                fieldToInterp="spinnerImage.rotation"
+            />
+        </Animation>
+    </children>
+</component>

@@ -1,0 +1,34 @@
+namespace ScreenStack
+    sub init()
+        m.screenStack = []
+    end sub
+
+    sub show(node as object)
+        prev = m.screenStack.peek()
+        if prev <> invalid
+            prev.visible = false
+        end if
+        m.top.appendChild(node)
+        node.visible = true
+        node.setFocus(true)
+        m.screenStack.push(node)
+    end sub
+
+    sub close(node as object)
+        if node = invalid OR (m.screenStack.peek() <> invalid AND m.screenStack.peek().isSameNode(node))
+            last = m.screenStack.Pop()
+            last.visible = false
+            m.top.removeChild(last)
+
+            prev = m.screenStack.peek()
+            if prev <> invalid
+                prev.visible = true
+                prev.setFocus(true)
+            end if
+        end if
+    end sub
+
+    function getCurrent()
+        return m.screenStack.peek()
+    end function
+end namespace

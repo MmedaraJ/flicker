@@ -1,0 +1,83 @@
+sub init()
+    m.rowList = m.top.findNode("rowList")
+    m.rowList.setFocus(true)
+    m.top.observeField("visible", "onVisibleChange")
+    m.rowList.observeField("rowItemFocused", "onRowItemFocused")
+
+    m.paginationTask = invalid
+    m.paginatingRowIndex = -1
+end sub
+
+sub onVisibleChange()
+    if m.top.visible = true
+        m.rowList.setFocus(true)
+    end if
+end sub
+
+sub onRowItemFocused(event as object)
+    focused = event.getData()
+    if focused = invalid or focused.count() < 2 then return
+
+    rowIndex = focused[0]
+    itemIndex = focused[1]
+
+    content = m.top.content
+    if content = invalid then return
+
+    rowNode = content.getChild(rowIndex)
+    if rowNode = invalid then return
+
+    itemCount = rowNode.getChildCount()
+    threshold = 3
+
+    if itemIndex >= itemCount - threshold
+        loadMoreForRow(rowIndex, rowNode)
+    end if
+end sub
+
+sub loadMoreForRow(rowIndex as integer, rowNode as object)
+    if m.paginationTask <> invalid then return
+
+    hasMore = rowNode.hasMore
+    if hasMore = false then return
+
+    currentPage = rowNode.currentPage
+    totalItems = rowNode.getChildCount()
+
+    if totalItems >= HomePageConfig.MAX_PER_ROW then return
+
+    m.paginatingRowIndex = rowIndex
+    m.paginationTask = createObject("roSGNode", "rowPaginationTask")
+    m.paginationTask.action = rowNode.action
+    m.paginationTask.params = rowNode.params
+    m.paginationTask.page = currentPage + 1
+    m.paginationTask.observeField("images", "onPaginationComplete")
+    m.paginationTask.control = "run"
+end sub
+
+sub onPaginationComplete(event as object)
+    images = event.getData()
+
+    if images <> invalid and images.count() > 0
+        content = m.top.content
+        rowNode = content.getChild(m.paginatingRowIndex)
+
+        if rowNode <> invalid
+            currentCount = rowNode.getChildCount()
+            remainingSlots = HomePageConfig.MAX_PER_ROW - currentCount
+
+            for i = 0 to images.count() - 1
+                if i >= remainingSlots then exit for
+                imageNode = createObject("roSGNode", "ContentNode")
+                imageNode.update(images[i], true)
+                rowNode.appendChild(imageNode)
+            end for
+
+            rowNode.currentPage = rowNode.currentPage + 1
+            rowNode.hasMore = images.count() >= HomePageConfig.PAGE_SIZE and rowNode.getChildCount() < HomePageConfig.MAX_PER_ROW
+        end if
+    end if
+
+    m.paginationTask = invalid
+    m.paginatingRowIndex = -1
+end sub

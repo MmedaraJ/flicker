@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="gridScreen" extends="Group" initialFocus="RowList">
+    <script type="text/brightscript" uri="pkg:/source/config/homePageConfig.bs" />
+
+	<interface>
+        <field id="content" type="node" alias="RowList.content" />
+        <field id="rowItemSelected" type="intarray" alwaysnotify="true" alias="RowList.rowItemSelected" />
+        <field id="rowItemFocused" type="intarray" alwaysnotify="true" alias="RowList.rowItemFocused" />
+        <field id="jumpToRowItem" type="intarray" alias="RowList.jumpToRowItem" />
+    </interface>
+    
+    <children>
+        <RowList
+            itemComponentName="rowListItemComponent"
+            id="rowList"
+            translation="[50,50]"
+            numRows="4"
+            rowitemSize="[[150,150]]"
+            rowItemSpacing="[[20,0]]"
+            itemSize="[1150,240]"
+            rowLabelOffset="[[50,20]]"
+            focusXOffset="[50]"
+            showRowLabel="[true]"
+            rowFocusAnimationStyle="floatingFocus"
+            vertFocusAnimationStyle="fixedFocus"
+        />
+    </children>
+</component>

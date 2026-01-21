@@ -1,0 +1,50 @@
+namespace ProviderFactory
+    function getUrl(action as string, params as object, page as integer) as string
+        parts = action.split(".")
+        if parts.count() < 2 then return ""
+
+        providerName = parts[0]
+        method = parts[1]
+
+        if providerName = "flickr"
+            return FlickrProvider.getUrl(method, params, page)
+        end if
+
+        return ""
+    end function
+
+    function parseResponse(action as string, response as object) as object
+        parts = action.split(".")
+        if parts.count() < 2 then return []
+
+        providerName = parts[0]
+
+        if providerName = "flickr"
+            return FlickrProvider.parseResponse(response)
+        end if
+
+        return []
+    end function
+
+    function getImages(action as string, params as object, page as integer) as object
+        parts = action.split(".")
+        if parts.count() < 2 then return []
+
+        providerName = parts[0]
+        method = parts[1]
+
+        if providerName = "flickr"
+            return FlickrProvider.getImages(method, params, page)
+        end if
+
+        return []
+    end function
+
+    function getImageInfo(provider as string, imageId as string) as object
+        if provider = "flickr"
+            return FlickrProvider.getImageInfo(imageId)
+        end if
+
+        return invalid
+    end function
+end namespace
