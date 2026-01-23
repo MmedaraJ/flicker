@@ -1,0 +1,19 @@
+namespace RowBatchLoaderTaskTests
+    @SGNode("rowBatchLoaderTask")
+    @suite("RowBatchLoaderTask tests")
+    class RowBatchLoaderTaskTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("init()")
+        '==============================================
+
+        @it("sets functionName to loadBatch")
+        function test_init_setsFunctionName() as object
+            ' bs:disable-next-line
+            init()
+
+            m.assertEqual(m.node.top.functionName, "loadBatch", `functionName should be set to "loadBatch"`)
+
+            return invalid
+        end function
+    end class
+end namespace

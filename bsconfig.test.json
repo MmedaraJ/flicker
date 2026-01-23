@@ -1,0 +1,19 @@
+{
+  "extends": "bsconfig.json",
+  "files": [
+    "manifest",
+    "source/**/*",
+    "components/**/*",
+    "images/**/*"
+  ],
+  "plugins": [
+    "rooibos-roku"
+  ],
+  "rooibos": {
+    "isRecordingCodeCoverage": true,
+    "testsFilePattern": "**/*.spec.bs",
+    "showOnlyFailures": false,
+    "catchCrashes": true,
+    "sendHomeOnFinish": false
+  }
+}

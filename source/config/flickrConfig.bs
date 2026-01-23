@@ -1,0 +1,33 @@
+namespace FlickrConfig
+    const API_BASE_URL = "https://api.flickr.com/services/rest/"
+    const FORMAT = "json"
+    const PROVIDER_NAME = "flickr"
+    const BASE_IMAGE_URL = "https://live.staticflickr.com/{0}/{1}_{2}_{3}.jpg"
+    const EXTRAS = "description,url_q,url_b"
+    const SIZE_LABEL = "Large"
+
+    function getApiKey() as string
+        return Secrets.getFlickrApiKey()
+    end function
+    namespace Methods
+        const GET_RECENT = "flickr.photos.getRecent"
+        const SEARCH = "flickr.photos.search"
+        const GET_SIZES = "flickr.photos.getSizes"
+        const INTERESTINGNESS = "flickr.interestingness.getList"
+        const GET_POPULAR = "flickr.photos.getPopular"
+        const PEOPLE_PHOTOS = "flickr.people.getPhotos"
+    end namespace
+
+    namespace MethodNames
+        const RECENT = "recent"
+        const SEARCH = "search"
+        const POPULAR = "popular"
+        const PEOPLE = "people"
+        const INTERESTINGNESS = "interestingness"
+    end namespace
+
+    namespace ImageSize
+        const THUMBNAIL = "q"
+        const LARGE = "b"
+    end namespace
+end namespace

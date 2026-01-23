@@ -1,0 +1,60 @@
+namespace RowLoaderService
+    function loadRows(rowConfigs as object) as object
+        if Common.Util.isInvalid(rowConfigs) then return []
+
+        requestItems = []
+        for each rowConfig in rowConfigs
+            url = ImageService.getUrlForRow(rowConfig, 1)
+            if not Common.Util.isEmptyString(url) then requestItems.push({ url: url, context: rowConfig })
+        end for
+
+        port = createObject("roMessagePort")
+        result = NetworkService.startParallelRequests(requestItems, port)
+
+        if Common.Util.isInvalid(result) then return []
+
+        rowNodes = []
+        requestsRemaining = result.requestMap.count()
+        while requestsRemaining > 0
+            msg = wait(0, port)
+
+            if type(msg) = "roUrlEvent"
+                requestId = msg.getSourceIdentity().toStr()
+                rowConfig = result.requestMap[requestId]
+
+                if rowConfig <> invalid and msg.getResponseCode() = 200
+                    rowNode = _handleSuccessResponse(msg, rowConfig)
+                    if rowNode <> invalid then rowNodes.push(rowNode)
+                end if
+
+                requestsRemaining -= 1
+            end if
+        end while
+
+        return rowNodes
+    end function
+
+    function _handleSuccessResponse(msg as object, rowConfig as object) as object
+        if Common.Util.isInvalid(msg) or Common.Util.isInvalid(rowConfig) then return invalid
+        
+        responseString = msg.getString()
+        response = parseJson(responseString)
+        images = ImageService.parseRowResponse(rowConfig, response)
+
+        if not Common.Util.isNonEmptyArray(images) then return invalid
+
+        rowNode = createObject("roSGNode", "contentNode")
+        rowNode.addFields({
+            action: rowConfig.action,
+            params: rowConfig.params ?? {},
+            currentPage: 1,
+            hasMore: images.count() >= HomePageConfig.PAGE_SIZE
+        })
+        rowNode.update({
+            title: rowConfig.title,
+            children: images
+        }, true)
+
+        return rowNode
+    end function
+end namespace

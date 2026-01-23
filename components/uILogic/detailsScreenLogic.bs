@@ -1,0 +1,7 @@
+namespace DetailsScreen
+    sub show(content as object, selectedItem as integer)
+        screen = createObject("roSGNode", "detailsScreen")
+        screen.content = content.getChild(selectedItem)
+        ScreenStack.show(screen)
+    end sub
+end namespace

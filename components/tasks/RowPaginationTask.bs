@@ -1,0 +1,14 @@
+sub init()
+    m.top.functionName = "loadMoreImages"
+end sub
+
+sub loadMoreImages()
+    rowConfig = {
+        action: m.top.action,
+        params: m.top.params
+    }
+
+    images = ImageService.getImagesForRow(rowConfig, m.top.page)
+    if not Common.Util.isArray(images) then return
+    m.top.images = images
+end sub

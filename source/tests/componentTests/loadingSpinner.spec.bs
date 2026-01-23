@@ -1,0 +1,49 @@
+namespace LoadingSpinnerTests
+    @SGNode("loadingSpinner")
+    @suite("LoadingSpinner tests")
+    class LoadingSpinnerTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("onVisibleChange()")
+        '==============================================
+
+        @it("starts animation when visible is true, stops when false")
+        @params(true, "start")
+        @params(false, "stop")
+        function test_onVisibleChange(visible as boolean, expectedControl as string) as object
+            m.node.spinAnimation = { control: "" }
+            m.node.top.visible = visible
+
+            ' bs:disable-next-line
+            onVisibleChange()
+
+            m.assertEqual(m.node.spinAnimation.control, expectedControl, `Expected spinAnimation.control to be "${expectedControl}"`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onDestroy()")
+        '==============================================
+
+        @it("stops animation and invalidates m-scope variables")
+        @params(true)
+        @params(false)
+        function test_onDestroy(hasAnimation as boolean) as object
+            spinAnimation = invalid
+            if hasAnimation
+                spinAnimation = { control: "" }
+            end if
+            m.node.spinAnimation = spinAnimation
+
+            ' bs:disable-next-line
+            onDestroy()
+
+            if hasAnimation
+                m.assertEqual(spinAnimation.control, "stop", `spinAnimation should be stopped`)
+            end if
+            m.assertInvalid(m.node.spinAnimation, `spinAnimation should be invalid`)
+
+            return invalid
+        end function
+    end class
+end namespace

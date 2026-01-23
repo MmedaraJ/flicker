@@ -1,0 +1,25 @@
+namespace DetailsScreen
+    namespace Styles
+        function get() as object
+            return {
+                screenWidth: 1280,
+                contentLeftMargin: 60,
+                rightMargin: 60,
+                imageDescriptionGap: 60,
+                poster: {
+                    maxWidth: 600,
+                    maxHeight: 400
+                }
+            }
+        end function
+    end namespace
+
+    namespace Strings
+        function get() as object
+            return {
+                dimensionLabel: "Dimension: {0} x {1} pixels",
+                sizeLabel: "Size: {0}"
+            }
+        end function
+    end namespace
+end namespace

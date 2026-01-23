@@ -1,0 +1,136 @@
+sub init()
+    m.top.observeFieldScoped("visible", "onVisibleChange")
+
+    m.poster = m.top.findNode("poster")
+    m.posterSkeleton = m.top.findNode("posterSkeleton")
+    m.titleLabel = m.top.findNode("titleLabel")
+    m.descriptionLabel = m.top.findNode("descriptionLabel")
+    m.dimensionLabel = m.top.findNode("dimensionLabel")
+    m.sizeLabel = m.top.findNode("sizeLabel")
+
+    m.poster.observeFieldScoped("loadStatus", "onPosterLoadStatusChange")
+
+    m.imageInfoTask = invalid
+    m.posterLoaded = false
+
+    m.styles = DetailsScreen.Styles.get()
+    m.strings = DetailsScreen.Strings.get()
+end sub
+
+sub onVisibleChange()
+    if m.top.visible = true then m.top.setFocus(true)
+end sub
+
+sub onContentChange()
+    content = m.top.content
+    if content = invalid then return
+
+    m.posterLoaded = false
+    m.posterSkeleton.visible = false
+
+    m.poster.uri = content.largeUrl
+    m.titleLabel.text = Common.Util.stripHtmlTags(content.title)
+    m.descriptionLabel.text = Common.Util.stripHtmlTags(content.description)
+
+    showSkeleton(content.width ?? 0, content.height ?? 0)
+    fetchImageInfo(content)
+end sub
+
+sub showSkeleton(imageWidth as integer, imageHeight as integer)
+    if m.posterLoaded or imageHeight < 1 then return
+
+    displaySize = calculateDisplaySize(imageWidth, imageHeight)
+
+    m.posterSkeleton.width = displaySize.width
+    m.posterSkeleton.height = displaySize.height
+    m.posterSkeleton.visible = true
+
+    positionDescription(imageWidth, imageHeight, displaySize)
+end sub
+
+sub onPosterLoadStatusChange(event as object)
+    loadStatus = event.getData()
+    if loadStatus <> "ready" then return
+
+    m.posterLoaded = true
+    m.posterSkeleton.visible = false
+
+    bitmapWidth = m.poster.bitmapWidth
+    bitmapHeight = m.poster.bitmapHeight
+
+    if bitmapHeight > 0 then positionDescription(bitmapWidth, bitmapHeight)
+end sub
+
+sub positionDescription(imageWidth as integer, imageHeight as integer, displaySizeObject = invalid as object)
+    displaySize = displaySizeObject ?? calculateDisplaySize(imageWidth, imageHeight)
+
+    descriptionX = displaySize.width + m.styles.imageDescriptionGap
+    descriptionWidth = m.styles.screenWidth - m.styles.contentLeftMargin - descriptionX - m.styles.rightMargin
+    
+    m.descriptionLabel.translation = [descriptionX, 0]
+    m.descriptionLabel.width = descriptionWidth
+end sub
+
+function calculateDisplaySize(imageWidth as integer, imageHeight as integer) as object
+    maxWidth = m.styles.poster.maxWidth
+    maxHeight = m.styles.poster.maxHeight
+
+    imageAspect = imageWidth / imageHeight
+    maxAspect = maxWidth / maxHeight
+
+    if imageAspect > maxAspect
+        ' Wide image - width is the constraint
+        displayWidth = maxWidth
+        displayHeight = maxWidth / imageAspect
+    else
+        ' Tall image - height is the constraint
+        displayHeight = maxHeight
+        displayWidth = maxHeight * imageAspect
+    end if
+
+    return { width: displayWidth, height: displayHeight }
+end function
+
+sub fetchImageInfo(content as object)
+    imageId = content?.id
+    provider = content?.provider
+
+    if Common.Util.isEmptyString(imageId) or Common.Util.isEmptyString(provider) then return
+
+    if m.imageInfoTask <> invalid then m.imageInfoTask.control = "stop"
+
+    m.imageInfoTask = createObject("roSGNode", "imageInfoTask")
+    m.imageInfoTask.observeFieldScoped("imageInfo", "onImageInfoReceived")
+    m.imageInfoTask.imageId = imageId
+    m.imageInfoTask.provider = provider
+    m.imageInfoTask.control = "run"
+end sub
+
+sub onImageInfoReceived(event as object)
+    imageInfo = event.getData()
+    if imageInfo = invalid then return
+
+    width = imageInfo?.width
+    height = imageInfo?.height
+    sizeLabel = imageInfo?.sizeLabel
+
+    if not Common.Util.isEmptyString(width) and not Common.Util.isEmptyString(height)
+        showSkeleton(val(width), val(height))
+        m.dimensionLabel.text = substitute(m.strings.dimensionLabel, width, height)
+        if not Common.Util.isEmptyString(sizeLabel) then m.sizeLabel.text = substitute(m.strings.sizeLabel, sizeLabel)
+    end if
+end sub
+
+sub onDestroy()
+    if m.imageInfoTask <> invalid then m.imageInfoTask.control = "stop"
+    
+    m.imageInfoTask = invalid
+    m.poster = invalid
+    m.posterSkeleton = invalid
+    m.titleLabel = invalid
+    m.descriptionLabel = invalid
+    m.dimensionLabel = invalid
+    m.sizeLabel = invalid
+    m.styles = invalid
+    m.strings = invalid
+end sub

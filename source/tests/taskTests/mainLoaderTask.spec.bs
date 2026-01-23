@@ -1,0 +1,19 @@
+namespace MainLoaderTaskTests
+    @SGNode("mainLoaderTask")
+    @suite("MainLoaderTask tests")
+    class MainLoaderTaskTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("init()")
+        '==============================================
+
+        @it("sets functionName to getContent")
+        function test_init_setsFunctionName() as object
+            ' bs:disable-next-line
+            init()
+
+            m.assertEqual(m.node.top.functionName, "getContent", `functionName should be set to "getContent"`)
+
+            return invalid
+        end function
+    end class
+end namespace

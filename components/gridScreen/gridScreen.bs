@@ -1,0 +1,149 @@
+sub init()
+    m.rowList = m.top.findNode("rowList")
+    m.rowList.setFocus(true)
+    m.top.observeFieldScoped("visible", "onVisibleChange")
+    m.rowList.observeFieldScoped("rowItemFocused", "onRowItemFocused")
+
+    m.paginationTask = invalid
+    m.paginatingRowIndex = -1
+    m.content = invalid
+
+    m.rowBatchTask = invalid
+    m.loadingIndicator = m.top.findNode("loadingIndicator")
+
+    m.config = GridScreen.Config.get()
+end sub
+
+sub onVisibleChange()
+    if m.top.visible = true then m.rowList.setFocus(true)
+end sub
+
+sub onContentChange()
+    m.content = m.top.content
+end sub
+
+sub onRowItemFocused(event as object)
+    focused = event.getData()
+    if focused = invalid or focused.count() < 2 then return
+
+    rowIndex = focused[0]
+    itemIndex = focused[1]
+
+    checkAndLoadMoreRows(rowIndex)
+    checkAndLoadMoreForRow(rowIndex, itemIndex)
+end sub
+
+sub checkAndLoadMoreRows(rowIndex as integer)
+    if m.content = invalid then return
+
+    loadedRowCount = m.content.getChildCount()
+
+    if rowIndex >= loadedRowCount - m.config.rowThreshold then loadMoreRows()
+end sub
+
+sub checkAndLoadMoreForRow(rowIndex as integer, itemIndex as integer)
+    if m.content = invalid then return
+
+    rowNode = m.content.getChild(rowIndex)
+    if rowNode = invalid then return
+
+    itemCount = rowNode.getChildCount()
+
+    if itemIndex >= itemCount - m.config.itemThreshold then loadMoreForRow(rowIndex, rowNode)
+end sub
+
+sub loadMoreRows()
+    if m.rowBatchTask <> invalid or m.content = invalid then return
+
+    hasMoreRows = m.content.hasMoreRows
+    if hasMoreRows = false then return
+    
+    currentRowIndex = m.content.currentRowIndex ?? 0
+    m.loadingIndicator.visible = true
+
+    m.rowBatchTask = createObject("roSGNode", "rowBatchLoaderTask")
+    m.rowBatchTask.startIndex = currentRowIndex
+    m.rowBatchTask.observeFieldScoped("rowNodes", "onRowBatchComplete")
+    m.rowBatchTask.control = "run"
+end sub
+
+sub onRowBatchComplete(event as object)
+    rowNodes = event.getData()
+    task = event.getRoSGNode()
+
+    if m.content <> invalid and rowNodes <> invalid
+        currentFocus = m.rowList.rowItemFocused
+
+        for each rowNode in rowNodes
+            m.content.appendChild(rowNode)
+        end for
+
+        m.content.currentRowIndex = m.content.currentRowIndex + task.batchSize
+        m.content.hasMoreRows = task.hasMore
+
+        if currentFocus <> invalid and currentFocus.count() >= 2 then m.rowList.jumpToRowItem = currentFocus
+    end if
+
+    m.loadingIndicator.visible = false
+    m.rowBatchTask = invalid
+end sub
+
+sub loadMoreForRow(rowIndex as integer, rowNode as object)
+    if m.paginationTask <> invalid then return
+
+    hasMore = rowNode.hasMore
+    if hasMore = false then return
+
+    currentPage = rowNode.currentPage
+    totalItems = rowNode.getChildCount()
+
+    if totalItems >= HomePageConfig.MAX_PER_ROW then return
+
+    m.paginatingRowIndex = rowIndex
+    m.paginationTask = createObject("roSGNode", "rowPaginationTask")
+    m.paginationTask.action = rowNode.action
+    m.paginationTask.params = rowNode.params
+    m.paginationTask.page = currentPage + 1
+    m.paginationTask.observeFieldScoped("images", "onPaginationComplete")
+    m.paginationTask.control = "run"
+end sub
+
+sub onPaginationComplete(event as object)
+    if m.content = invalid then return
+    images = event.getData()
+
+    if images <> invalid and images.count() > 0
+        rowNode = m.content.getChild(m.paginatingRowIndex)
+
+        if rowNode <> invalid
+            currentCount = rowNode.getChildCount()
+            remainingSlots = HomePageConfig.MAX_PER_ROW - currentCount
+
+            for i = 0 to images.count() - 1
+                if i >= remainingSlots then exit for
+
+                imageNode = createObject("roSGNode", "contentNode")
+                imageNode.update(images[i], true)
+                rowNode.appendChild(imageNode)
+            end for
+
+            rowNode.currentPage = rowNode.currentPage + 1
+            rowNode.hasMore = images.count() >= HomePageConfig.PAGE_SIZE and rowNode.getChildCount() < HomePageConfig.MAX_PER_ROW
+        end if
+    end if
+
+    m.paginationTask = invalid
+    m.paginatingRowIndex = -1
+end sub
+
+sub onDestroy()
+    if m.paginationTask <> invalid then m.paginationTask.control = "stop"
+    if m.rowBatchTask <> invalid then m.rowBatchTask.control = "stop"
+
+    m.paginationTask = invalid
+    m.rowBatchTask = invalid
+    m.rowList = invalid
+    m.loadingIndicator = invalid
+    m.content = invalid
+    m.config = invalid
+end sub

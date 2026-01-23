@@ -1,0 +1,58 @@
+import "pkg:/source/utils/common.bs"
+
+namespace ProviderFactory
+    function getUrl(action as string, params as object, page as integer) as string
+        parsed = _parseAction(action)
+        if parsed = invalid then return ""
+
+        if parsed.provider = FlickrConfig.PROVIDER_NAME
+            return FlickrProvider.getUrl(parsed.method, params, page)
+        end if
+
+        return ""
+    end function
+
+    function parseResponse(action as string, response as object) as object
+        parsed = _parseAction(action)
+        if parsed = invalid then return []
+
+        if parsed.provider = FlickrConfig.PROVIDER_NAME
+            return FlickrProvider.parseResponse(response)
+        end if
+
+        return []
+    end function
+
+    function getImages(action as string, params as object, page as integer) as object
+        parsed = _parseAction(action)
+        if parsed = invalid then return []
+
+        if parsed.provider = FlickrConfig.PROVIDER_NAME
+            return FlickrProvider.getImages(parsed.method, params, page)
+        end if
+
+        return []
+    end function
+
+    function getImageInfo(provider as string, imageId as string) as object
+        if Common.Util.isEmptyString(provider) then return invalid
+
+        if provider = FlickrConfig.PROVIDER_NAME
+            return FlickrProvider.getImageInfo(imageId)
+        end if
+
+        return invalid
+    end function
+
+    function _parseAction(action as string) as object
+        if Common.Util.isEmptyString(action) then return invalid
+
+        parts = action.split(".")
+        if parts.count() < 2 then return invalid
+
+        return {
+            provider: parts[0],
+            method: parts[1]
+        }
+    end function
+end namespace

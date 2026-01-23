@@ -1,0 +1,416 @@
+namespace FlickrProviderTests
+    @suite("FlickrProvider tests")
+    class FlickrProviderTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("getUrl()")
+        '==============================================
+
+        @it("returns URL for recent method")
+        function test_getUrl_recent() as object
+            ' bs:disable-next-line
+            result = FlickrProvider.getUrl(FlickrConfig.MethodNames.RECENT, {}, 1)
+
+            m.assertTrue(result.instr("method=flickr.photos.getRecent") > -1, `URL should contain getRecent method`)
+            m.assertTrue(result.instr("page=1") > -1, `URL should contain page parameter`)
+
+            return invalid
+        end function
+
+        @it("returns URL for search method with tags")
+        function test_getUrl_search() as object
+            params = { tags: "nature" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider.getUrl(FlickrConfig.MethodNames.SEARCH, params, 2)
+
+            m.assertTrue(result.instr("method=flickr.photos.search") > -1, `URL should contain search method`)
+            m.assertTrue(result.instr("tags=nature") > -1, `URL should contain tags parameter`)
+            m.assertTrue(result.instr("page=2") > -1, `URL should contain page parameter`)
+
+            return invalid
+        end function
+
+        @it("returns URL for popular method with user_id")
+        function test_getUrl_popular() as object
+            params = { user_id: "12345@N00" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider.getUrl(FlickrConfig.MethodNames.POPULAR, params, 1)
+
+            m.assertTrue(result.instr("method=flickr.photos.getPopular") > -1, `URL should contain getPopular method`)
+            m.assertTrue(result.instr("user_id=12345@N00") > -1, `URL should contain user_id parameter`)
+
+            return invalid
+        end function
+
+        @it("returns URL for people method with user_id")
+        function test_getUrl_people() as object
+            params = { user_id: "67890@N00" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider.getUrl(FlickrConfig.MethodNames.PEOPLE, params, 3)
+
+            m.assertTrue(result.instr("method=flickr.people.getPhotos") > -1, `URL should contain getPhotos method`)
+            m.assertTrue(result.instr("user_id=67890@N00") > -1, `URL should contain user_id parameter`)
+            m.assertTrue(result.instr("page=3") > -1, `URL should contain page parameter`)
+
+            return invalid
+        end function
+
+        @it("returns empty string for unknown method")
+        function test_getUrl_unknownMethod() as object
+            ' bs:disable-next-line
+            result = FlickrProvider.getUrl("unknown_method", {}, 1)
+
+            m.assertEqual(result, "", `Should return empty string for unknown method`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("parseResponse()")
+        '==============================================
+
+        @it("returns mapped photos when response has photos")
+        function test_parseResponse_withPhotos() as object
+            response = {
+                photos: {
+                    photo: [
+                        { id: "1", title: "Photo 1", server: "123", secret: "abc" },
+                        { id: "2", title: "Photo 2", server: "456", secret: "def" }
+                    ]
+                }
+            }
+
+            ' bs:disable-next-line
+            result = FlickrProvider.parseResponse(response)
+
+            m.assertEqual(result.count(), 2, `Should return 2 mapped photos`)
+
+            return invalid
+        end function
+
+        @it("returns empty array when response is invalid")
+        function test_parseResponse_invalidResponse() as object
+            ' bs:disable-next-line
+            result = FlickrProvider.parseResponse(invalid)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for invalid response`)
+
+            return invalid
+        end function
+
+        @it("returns empty array when photos is missing")
+        function test_parseResponse_missingPhotos() as object
+            response = { stat: "ok" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider.parseResponse(response)
+
+            m.assertEqual(result.count(), 0, `Should return empty array when photos missing`)
+
+            return invalid
+        end function
+
+        @it("returns empty array when photo array is empty")
+        function test_parseResponse_emptyPhotos() as object
+            response = { photos: { photo: [] } }
+
+            ' bs:disable-next-line
+            result = FlickrProvider.parseResponse(response)
+
+            m.assertEqual(result.count(), 0, `Should return empty array when photos empty`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("getImages()")
+        '==============================================
+
+        @it("returns empty array when method is unknown")
+        function test_getImages_unknownMethod() as object
+            ' bs:disable-next-line
+            result = FlickrProvider.getImages("unknown", {}, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for unknown method`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("_mapPhotos()")
+        '==============================================
+
+        @it("maps array of photos to image models")
+        function test_mapPhotos_mapsAll() as object
+            photos = [
+                { id: "1", title: "Photo 1", server: "123", secret: "abc" },
+                { id: "2", title: "Photo 2", server: "456", secret: "def" },
+                { id: "3", title: "Photo 3", server: "789", secret: "ghi" }
+            ]
+
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhotos(photos)
+
+            m.assertEqual(result.count(), 3, `Should map all 3 photos`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for empty photos array")
+        function test_mapPhotos_emptyArray() as object
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhotos([])
+
+            m.assertEqual(result.count(), 0, `Should return empty array`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("_mapPhoto()")
+        '==============================================
+
+        @it("maps photo with all fields")
+        function test_mapPhoto_allFields() as object
+            photo = {
+                id: "12345",
+                title: "Test Photo",
+                description: { _content: "A test description" },
+                url_q: "http://thumb.jpg",
+                url_b: "http://large.jpg",
+                width_b: 1920,
+                height_b: 1080,
+                server: "123",
+                secret: "abc"
+            }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhoto(photo)
+
+            m.assertEqual(result.id, "12345", `id should be mapped`)
+            m.assertEqual(result.provider, "flickr", `provider should be flickr`)
+            m.assertEqual(result.title, "Test Photo", `title should be mapped`)
+            m.assertEqual(result.description, "A test description", `description should be mapped`)
+            m.assertEqual(result.thumbnailUrl, "http://thumb.jpg", `thumbnailUrl should be mapped`)
+            m.assertEqual(result.largeUrl, "http://large.jpg", `largeUrl should be mapped`)
+            m.assertEqual(result.width, 1920, `width should be mapped`)
+            m.assertEqual(result.height, 1080, `height should be mapped`)
+
+            return invalid
+        end function
+
+        @it("builds image URL when url_q is missing")
+        function test_mapPhoto_missingUrlQ() as object
+            photo = {
+                id: "12345",
+                title: "Test",
+                server: "999",
+                secret: "xyz",
+                url_b: "http://large.jpg"
+            }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhoto(photo)
+
+            expectedUrl = "https://live.staticflickr.com/999/12345_xyz_q.jpg"
+            m.assertEqual(result.thumbnailUrl, expectedUrl, `Should build thumbnail URL`)
+
+            return invalid
+        end function
+
+        @it("builds image URL when url_b is missing")
+        function test_mapPhoto_missingUrlB() as object
+            photo = {
+                id: "12345",
+                title: "Test",
+                server: "999",
+                secret: "xyz",
+                url_q: "http://thumb.jpg"
+            }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhoto(photo)
+
+            expectedUrl = "https://live.staticflickr.com/999/12345_xyz_b.jpg"
+            m.assertEqual(result.largeUrl, expectedUrl, `Should build large URL`)
+
+            return invalid
+        end function
+
+        @it("uses empty string for missing description")
+        function test_mapPhoto_missingDescription() as object
+            photo = {
+                id: "12345",
+                title: "Test",
+                server: "123",
+                secret: "abc"
+            }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhoto(photo)
+
+            m.assertEqual(result.description, "", `description should be empty string`)
+
+            return invalid
+        end function
+
+        @it("uses 0 for missing dimensions")
+        function test_mapPhoto_missingDimensions() as object
+            photo = {
+                id: "12345",
+                title: "Test",
+                server: "123",
+                secret: "abc"
+            }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhoto(photo)
+
+            m.assertEqual(result.width, 0, `width should be 0`)
+            m.assertEqual(result.height, 0, `height should be 0`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for invalid photo")
+        function test_mapPhoto_invalidPhoto() as object
+            ' bs:disable-next-line
+            result = FlickrProvider._mapPhoto(invalid)
+
+            m.assertTrue(type(result) = "roArray", `Should return array for invalid photo`)
+            m.assertEqual(result.count(), 0, `Should return empty array`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("_buildImageUrl()")
+        '==============================================
+
+        @it("builds correct image URL with all parts")
+        function test_buildImageUrl_correctFormat() as object
+            photo = { server: "65535", id: "12345678", secret: "abcdef123" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._buildImageUrl(photo, "q")
+
+            expected = "https://live.staticflickr.com/65535/12345678_abcdef123_q.jpg"
+            m.assertEqual(result, expected, `Should build correct URL`)
+
+            return invalid
+        end function
+
+        @it("builds URL with thumbnail size")
+        function test_buildImageUrl_thumbnailSize() as object
+            photo = { server: "123", id: "456", secret: "abc" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._buildImageUrl(photo, FlickrConfig.ImageSize.THUMBNAIL)
+
+            m.assertTrue(result.instr("_q.jpg") > -1, `URL should end with _q.jpg for thumbnail`)
+
+            return invalid
+        end function
+
+        @it("builds URL with large size")
+        function test_buildImageUrl_largeSize() as object
+            photo = { server: "123", id: "456", secret: "abc" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._buildImageUrl(photo, FlickrConfig.ImageSize.LARGE)
+
+            m.assertTrue(result.instr("_b.jpg") > -1, `URL should end with _b.jpg for large`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("_buildApiUrl()")
+        '==============================================
+
+        @it("builds URL with required parameters")
+        function test_buildApiUrl_requiredParams() as object
+            ' bs:disable-next-line
+            result = FlickrProvider._buildApiUrl("flickr.test.method", {}, 1)
+
+            m.assertTrue(result.instr(FlickrConfig.API_BASE_URL) = 0, `Should start with base URL`)
+            m.assertTrue(result.instr("method=flickr.test.method") > -1, `Should contain method`)
+            m.assertTrue(result.instr("api_key=" + FlickrConfig.getApiKey()) > -1, `Should contain API key`)
+            m.assertTrue(result.instr("format=" + FlickrConfig.FORMAT) > -1, `Should contain format`)
+            m.assertTrue(result.instr("nojsoncallback=1") > -1, `Should contain nojsoncallback`)
+            m.assertTrue(result.instr("page=1") > -1, `Should contain page`)
+
+            return invalid
+        end function
+
+        @it("includes extra parameters")
+        function test_buildApiUrl_extraParams() as object
+            extraParams = { tags: "sunset", user_id: "12345" }
+
+            ' bs:disable-next-line
+            result = FlickrProvider._buildApiUrl("flickr.test.method", extraParams, 1)
+
+            m.assertTrue(result.instr("tags=sunset") > -1, `Should contain tags parameter`)
+            m.assertTrue(result.instr("user_id=12345") > -1, `Should contain user_id parameter`)
+
+            return invalid
+        end function
+
+        @it("uses default page of 1 when not specified")
+        function test_buildApiUrl_defaultPage() as object
+            ' bs:disable-next-line
+            result = FlickrProvider._buildApiUrl("flickr.test.method")
+
+            m.assertTrue(result.instr("page=1") > -1, `Should default to page 1`)
+
+            return invalid
+        end function
+
+        @it("uses specified page number")
+        @params(1)
+        @params(5)
+        @params(10)
+        @params(99)
+        function test_buildApiUrl_specifiedPage(page as integer) as object
+            ' bs:disable-next-line
+            result = FlickrProvider._buildApiUrl("flickr.test.method", {}, page)
+
+            m.assertTrue(result.instr("page=" + page.toStr()) > -1, `Should contain page=${page}`)
+
+            return invalid
+        end function
+
+        @it("includes per_page from HomePageConfig")
+        function test_buildApiUrl_perPage() as object
+            ' bs:disable-next-line
+            result = FlickrProvider._buildApiUrl("flickr.test.method", {}, 1)
+
+            m.assertTrue(result.instr("per_page=" + (HomePageConfig.PAGE_SIZE).toStr()) > -1, `Should contain per_page`)
+
+            return invalid
+        end function
+
+        @it("includes extras parameter")
+        function test_buildApiUrl_extras() as object
+            ' bs:disable-next-line
+            result = FlickrProvider._buildApiUrl("flickr.test.method", {}, 1)
+
+            m.assertTrue(result.instr("extras=") > -1, `Should contain extras parameter`)
+
+            return invalid
+        end function
+
+        @it("works with empty extra params")
+        function test_buildApiUrl_emptyExtraParams() as object
+            ' bs:disable-next-line
+            result = FlickrProvider._buildApiUrl("flickr.test.method", {}, 1)
+
+            m.assertTrue(result.len() > 0, `Should return valid URL with empty extra params`)
+            m.assertTrue(result.instr("method=flickr.test.method") > -1, `Should contain method`)
+
+            return invalid
+        end function
+    end class
+end namespace

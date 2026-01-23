@@ -1,0 +1,130 @@
+namespace HomePageConfigTests
+    @suite("HomePageConfig tests")
+    class HomePageConfigTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("getRowBatch()")
+        '==============================================
+
+        @it("returns first batch of 10 rows with hasMore true")
+        function test_getRowBatch_firstBatch() as object
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(0)
+
+            m.assertEqual(result.rows.count(), 10, `First batch should have 10 rows`)
+            m.assertTrue(result.hasMore, `hasMore should be true for first batch`)
+            m.assertEqual(result.rows[0].title, "Recent Photos", `First row should be Recent Photos`)
+
+            return invalid
+        end function
+
+        @it("returns second batch of 10 rows with hasMore true")
+        function test_getRowBatch_secondBatch() as object
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(10)
+
+            m.assertEqual(result.rows.count(), 10, `Second batch should have 10 rows`)
+            m.assertTrue(result.hasMore, `hasMore should be true for second batch`)
+
+            return invalid
+        end function
+
+        @it("returns correct rows for middle batches")
+        @params(20)
+        @params(30)
+        @params(40)
+        @params(50)
+        function test_getRowBatch_middleBatches(startIndex as integer) as object
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(startIndex)
+
+            m.assertEqual(result.rows.count(), 10, `Batch at index ${startIndex} should have 10 rows`)
+            m.assertTrue(result.hasMore, `hasMore should be true for batch at index ${startIndex}`)
+
+            return invalid
+        end function
+
+        @it("returns partial batch when near end of rows")
+        function test_getRowBatch_partialBatch() as object
+            ' Total rows = 92, startIndex = 90 means we get rows 90, 91 (2 rows)
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(90)
+
+            m.assertEqual(result.rows.count(), 2, `Partial batch should have remaining rows`)
+            m.assertFalse(result.hasMore, `hasMore should be false for last partial batch`)
+
+            return invalid
+        end function
+
+        @it("returns hasMore false when returning last full batch")
+        function test_getRowBatch_lastFullBatch() as object
+            ' Total rows = 92, startIndex = 82 means we get rows 82-91 (10 rows, last full batch)
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(82)
+
+            m.assertEqual(result.rows.count(), 10, `Last full batch should have 10 rows`)
+            m.assertFalse(result.hasMore, `hasMore should be false when at last batch`)
+
+            return invalid
+        end function
+
+        @it("returns empty batch when startIndex equals total rows")
+        function test_getRowBatch_startIndexAtEnd() as object
+            ' Total rows = 92, startIndex = 92 is out of bounds
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(92)
+
+            m.assertEqual(result.rows.count(), 0, `Should return empty batch when startIndex equals total rows`)
+            m.assertFalse(result.hasMore, `hasMore should be false when no rows returned`)
+
+            return invalid
+        end function
+
+        @it("returns empty batch when startIndex exceeds total rows")
+        function test_getRowBatch_startIndexBeyondEnd() as object
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(100)
+
+            m.assertEqual(result.rows.count(), 0, `Should return empty batch when startIndex exceeds total rows`)
+            m.assertFalse(result.hasMore, `hasMore should be false when no rows returned`)
+
+            return invalid
+        end function
+
+        @it("returns rows with correct structure")
+        function test_getRowBatch_rowStructure() as object
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(0)
+
+            firstRow = result.rows[0]
+            m.assertNotInvalid(firstRow.title, `Row should have title`)
+            m.assertNotInvalid(firstRow.action, `Row should have action`)
+
+            return invalid
+        end function
+
+        @it("returns rows with params when applicable")
+        function test_getRowBatch_rowWithParams() as object
+            ' Second row is "Popular from NASA" which has params
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(0)
+
+            secondRow = result.rows[1]
+            m.assertEqual(secondRow.title, "Popular from NASA", `Second row should be Popular from NASA`)
+            m.assertNotInvalid(secondRow.params, `Row should have params`)
+            m.assertEqual(secondRow.params.user_id, "24662369@N07", `Params should have correct user_id`)
+
+            return invalid
+        end function
+
+        @it("respects ROWS_PER_PAGE constant")
+        function test_getRowBatch_respectsRowsPerPage() as object
+            ' ROWS_PER_PAGE = 10
+            ' bs:disable-next-line
+            result = HomePageConfig.getRowBatch(0)
+
+            m.assertTrue(result.rows.count() <= 10, `Batch should not exceed ROWS_PER_PAGE (10)`)
+
+            return invalid
+        end function
+    end class
+end namespace

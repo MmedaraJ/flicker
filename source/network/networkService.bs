@@ -1,0 +1,51 @@
+namespace NetworkService
+    const CERTS_FILE = "common:/certs/ca-bundle.crt"
+
+    function createTransfer(url as string) as object
+        xfer = createObject("roURLTransfer")
+        xfer.setCertificatesFile(CERTS_FILE)
+        xfer.setUrl(url)
+
+        return xfer
+    end function
+
+    function get(url as string) as object
+        xfer = createTransfer(url)
+
+        response = xfer.getToString()
+        json = parseJson(response)
+
+        return json
+    end function
+
+    ' Starts multiple async requests in parallel
+    ' items: array of { url: string, context: object }
+    ' port: roMessagePort to receive responses
+    ' Returns: { transfers: array, requestMap: assocarray }
+    function startParallelRequests(items as object, port as object) as object
+        if Common.Util.isInvalid(items) or Common.Util.isInvalid(port) then return invalid
+
+        transfers = []
+        requestMap = {}
+
+        for each item in items
+            url = item.url
+            if Common.Util.isEmptyString(url) then continue for
+            
+            xfer = createTransfer(url)
+            xfer.setMessagePort(port)
+
+            requestId = xfer.getIdentity().toStr()
+            context = item.context
+            if not Common.Util.isInvalid(context) then requestMap[requestId] = context
+            transfers.push(xfer)
+
+            xfer.asyncGetToString()
+        end for
+
+        return {
+            transfers: transfers,
+            requestMap: requestMap
+        }
+    end function
+end namespace

@@ -1,0 +1,102 @@
+namespace FlickrProvider
+    function getUrl(method as string, params as object, page as integer) as string
+        if method = FlickrConfig.MethodNames.RECENT 
+            return _buildApiUrl(FlickrConfig.Methods.GET_RECENT, {}, page)
+        else if method = FlickrConfig.MethodNames.SEARCH
+            return _buildApiUrl(FlickrConfig.Methods.SEARCH, { tags: params.tags }, page)
+        else if method = FlickrConfig.MethodNames.POPULAR
+            return _buildApiUrl(FlickrConfig.Methods.GET_POPULAR, { user_id: params.user_id }, page)
+        else if method = FlickrConfig.MethodNames.PEOPLE
+            return _buildApiUrl(FlickrConfig.Methods.PEOPLE_PHOTOS, { user_id: params.user_id }, page)
+        end if
+
+        return ""
+    end function
+
+    function parseResponse(response as object) as object
+        photos = response?.photos?.photo
+        if photos <> invalid then return _mapPhotos(photos)
+        return []
+    end function
+
+    function getImages(method as string, params as object, page as integer) as object
+        url = getUrl(method, params, page)
+        if url = "" then return []
+
+        response = NetworkService.get(url)
+        return parseResponse(response)
+    end function
+
+    function getImageInfo(imageId as string) as object
+        url = _buildApiUrl(FlickrConfig.Methods.GET_SIZES, { photo_id: imageId })
+        response = NetworkService.get(url)
+
+        sizes = response?.sizes?.size
+        if sizes <> invalid
+            imageInfo = {}
+
+            for i = sizes.count() - 1 to 0 step -1
+                size = sizes[i]
+                if size.label = FlickrConfig.SIZE_LABEL
+                    imageInfo.width = size.width.toStr()
+                    imageInfo.height = size.height.toStr()
+                    imageInfo.sizeLabel = size.label
+                    exit for
+                end if
+            end for
+
+            return imageInfo
+        end if
+
+        return invalid
+    end function
+
+    function _mapPhotos(photos as object) as object
+        images = []
+        for each photo in photos
+            images.push(_mapPhoto(photo))
+        end for
+        return images
+    end function
+
+    function _mapPhoto(photo as object) as object
+        if Common.Util.isInvalid(photo) then return []
+        
+        description = photo.description?._content ?? ""
+        thumbnailUrl = photo.url_q ?? _buildImageUrl(photo, FlickrConfig.ImageSize.THUMBNAIL)
+        largeUrl = photo.url_b ?? _buildImageUrl(photo, FlickrConfig.ImageSize.LARGE)
+        width = photo.width_b ?? 0
+        height = photo.height_b ?? 0
+
+        return ImageModel.create({
+            id: photo.id,
+            provider: FlickrConfig.PROVIDER_NAME,
+            title: photo.title.trim(),
+            description: description.trim(),
+            thumbnailUrl: thumbnailUrl,
+            largeUrl: largeUrl,
+            width: width,
+            height: height
+        })
+    end function
+
+    function _buildImageUrl(photo as object, size as string) as string
+        return substitute(FlickrConfig.BASE_IMAGE_URL, photo.server, photo.id, photo.secret, size)
+    end function
+
+    function _buildApiUrl(method as string, extraParams = {} as object, page = 1 as integer) as string
+        params = {
+            method: method,
+            api_key: FlickrConfig.getApiKey(),
+            format: FlickrConfig.FORMAT,
+            nojsoncallback: "1",
+            per_page: HomePageConfig.PAGE_SIZE,
+            page: page,
+            extras: FlickrConfig.EXTRAS
+        }
+
+        params.append(extraParams)
+
+        return FlickrConfig.API_BASE_URL + "?" + Common.Util.buildQueryString(params)
+    end function
+end namespace

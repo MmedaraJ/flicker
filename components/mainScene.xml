@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="mainScene" extends="Scene">
+    <script type="text/brightscript" uri="uILogic/screenStackLogic.bs" />
+    <script type="text/brightscript" uri="uILogic/contentTaskLogic.bs" />
+    <script type="text/brightscript" uri="uILogic/gridScreenLogic.bs" />
+    <script type="text/brightscript" uri="uILogic/detailsScreenLogic.bs" />
+    <children>
+        <loadingSpinner
+            id="loadingIndicator"
+            translation="[640, 360]"
+            visible="false"
+        />
+    </children>
+</component>

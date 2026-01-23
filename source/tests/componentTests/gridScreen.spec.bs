@@ -1,0 +1,681 @@
+import "pkg:/source/tests/mockData.bs"
+
+namespace GridScreenTests
+    @SGNode("gridScreen")
+    @suite("GridScreen tests")
+    class GridScreenTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("onVisibleChange()")
+        '==============================================
+
+        @beforeEach
+        protected override function beforeEach() as object
+            m.node.config = MockData.getGridScreenConfig()
+            return invalid
+        end function
+
+        @afterEach
+        protected override function afterEach() as object
+            if m.node.rowBatchTask <> invalid then m.node.rowBatchTask.control = "stop"
+            if m.node.paginationTask <> invalid then m.node.paginationTask.control = "stop"
+            return invalid
+        end function
+
+        @it("sets focus on rowList when visible is true, does nothing when false")
+        @params(true, true)
+        @params(false, false)
+        function test_onVisibleChange(visible as boolean, expectedHasFocus as boolean) as object
+            m.node.rowList = createObject("roSGNode", "RowList")
+            m.node.top.visible = visible
+
+            ' bs:disable-next-line
+            onVisibleChange()
+
+            m.assertEqual(m.node.rowList.hasFocus(), expectedHasFocus, `Expected rowList.hasFocus to be ${expectedHasFocus}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onContentChange()")
+        '==============================================
+
+        @it("sets m.content from m.top.content")
+        @params(invalid)
+        function test_onContentChange(content as dynamic) as object
+            m.node.loadingIndicator = { visible: true }
+            m.node.content = invalid
+            m.node.top.content = content
+
+            ' bs:disable-next-line
+            onContentChange()
+
+            m.assertEqual(m.node.content, content, `m.content should be set to m.top.content`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onRowItemFocused()")
+        '==============================================
+
+        @it("returns early when focused data is invalid or incomplete")
+        @params(invalid)
+        @params([])
+        @params([0])
+        function test_onRowItemFocused_earlyReturn(focusedData as dynamic) as object
+            m.node.content = invalid
+            checkAndLoadMoreRowsCalled = false
+
+            event = {
+                focusedData: focusedData ,
+                getData: function() as dynamic
+                    return m.focusedData
+                end function
+            }
+
+            ' bs:disable-next-line
+            onRowItemFocused(event)
+
+            m.assertInvalid(m.node.content, `Should return early without accessing content`)
+
+            return invalid
+        end function
+
+        @it("calls check functions with correct indices")
+        function test_onRowItemFocused_callsChecks() as object
+            m.node.content = MockData.createMockContentNode(5, 10)
+            m.node.rowBatchTask = invalid
+            m.node.paginationTask = invalid
+            m.node.loadingIndicator = { visible: false }
+
+            event = { 
+                getData: function() as dynamic
+                    return [2, 5]
+                end function 
+            }
+
+            ' bs:disable-next-line
+            onRowItemFocused(event)
+
+            m.assertTrue(true, `onRowItemFocused completed successfully`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("checkAndLoadMoreRows()")
+        '==============================================
+
+        @it("returns early when content is invalid")
+        function test_checkAndLoadMoreRows_invalidContent() as object
+            m.node.content = invalid
+            m.node.rowBatchTask = invalid
+
+            ' bs:disable-next-line
+            checkAndLoadMoreRows(0)
+
+            m.assertInvalid(m.node.rowBatchTask, `rowBatchTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("does not load more rows when not near threshold")
+        @params(0, 10)
+        @params(1, 10)
+        @params(5, 10)
+        @params(6, 10)
+        function test_checkAndLoadMoreRows_notNearThreshold(rowIndex as integer, totalRows as integer) as object
+            mockContent = MockData.createMockContentNode(totalRows, 5)
+            mockContent.hasMoreRows = true
+            m.node.content = mockContent
+            m.node.rowBatchTask = invalid
+            m.node.loadingIndicator = { visible: false }
+
+            ' bs:disable-next-line
+            checkAndLoadMoreRows(rowIndex)
+
+            m.assertInvalid(m.node.rowBatchTask, `Should not create task when not near threshold`)
+
+            return invalid
+        end function
+
+        @it("loads more rows when near threshold")
+        @params(7, 10)
+        @params(8, 10)
+        @params(9, 10)
+        @params(2, 5)
+        @params(3, 5)
+        function test_checkAndLoadMoreRows_nearThreshold(rowIndex as integer, totalRows as integer) as object
+            mockContent = MockData.createMockContentNode(totalRows, 5)
+            mockContent.hasMoreRows = true
+            mockContent.currentRowIndex = totalRows
+            m.node.content = mockContent
+            m.node.rowBatchTask = invalid
+            m.node.loadingIndicator = { visible: false }
+
+            ' bs:disable-next-line
+            checkAndLoadMoreRows(rowIndex)
+
+            m.assertNotInvalid(m.node.rowBatchTask, `Should create task when near threshold`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("checkAndLoadMoreForRow()")
+        '==============================================
+
+        @it("returns early when content is invalid")
+        function test_checkAndLoadMoreForRow_invalidContent() as object
+            m.node.content = invalid
+            m.node.paginationTask = invalid
+
+            ' bs:disable-next-line
+            checkAndLoadMoreForRow(0, 5)
+
+            m.assertInvalid(m.node.paginationTask, `paginationTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("returns early when rowNode is invalid")
+        function test_checkAndLoadMoreForRow_invalidRowNode() as object
+            mockContent = MockData.createMockContentNode(0, 0)
+            m.node.content = mockContent
+            m.node.paginationTask = invalid
+
+            ' bs:disable-next-line
+            checkAndLoadMoreForRow(5, 5)
+
+            m.assertInvalid(m.node.paginationTask, `paginationTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("does not load more items when not near threshold")
+        @params(0, 10)
+        @params(3, 10)
+        @params(5, 10)
+        @params(6, 10)
+        function test_checkAndLoadMoreForRow_notNearThreshold(itemIndex as integer, itemCount as integer) as object
+            mockContent = MockData.createMockContentNode(1, itemCount)
+            m.node.content = mockContent
+            m.node.paginationTask = invalid
+
+            ' bs:disable-next-line
+            checkAndLoadMoreForRow(0, itemIndex)
+
+            m.assertInvalid(m.node.paginationTask, `Should not create task when not near threshold`)
+
+            return invalid
+        end function
+
+        @it("loads more items when near threshold")
+        @params(7, 10)
+        @params(8, 10)
+        @params(9, 10)
+        function test_checkAndLoadMoreForRow_nearThreshold(itemIndex as integer, itemCount as integer) as object
+            mockContent = MockData.createMockContentNode(1, itemCount)
+            rowNode = mockContent.getChild(0)
+            rowNode.hasMore = true
+            rowNode.currentPage = 1
+            rowNode.action = "flickr.recent"
+            rowNode.params = {}
+            m.node.content = mockContent
+            m.node.paginationTask = invalid
+            m.node.paginatingRowIndex = -1
+
+            ' bs:disable-next-line
+            checkAndLoadMoreForRow(0, itemIndex)
+
+            m.assertNotInvalid(m.node.paginationTask, `Should create task when near threshold`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("loadMoreRows()")
+        '==============================================
+
+        @it("returns early when rowBatchTask is already running")
+        function test_loadMoreRows_taskAlreadyRunning() as object
+            existingTask = { control: "" }
+            m.node.rowBatchTask = existingTask
+            m.node.content = {}
+            m.node.loadingIndicator = { visible: false }
+
+            ' bs:disable-next-line
+            loadMoreRows()
+
+            m.assertFalse(m.node.loadingIndicator.visible, `loadingIndicator should remain hidden`)
+
+            return invalid
+        end function
+
+        @it("returns early when content is invalid")
+        function test_loadMoreRows_invalidContent() as object
+            m.node.rowBatchTask = invalid
+            m.node.content = invalid
+            m.node.loadingIndicator = { visible: false }
+
+            ' bs:disable-next-line
+            loadMoreRows()
+
+            m.assertInvalid(m.node.rowBatchTask, `rowBatchTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("returns early when hasMoreRows is false")
+        function test_loadMoreRows_noMoreRows() as object
+            mockContent = { hasMoreRows: false }
+            m.node.content = mockContent
+            m.node.rowBatchTask = invalid
+            m.node.loadingIndicator = { visible: false }
+
+            ' bs:disable-next-line
+            loadMoreRows()
+
+            m.assertInvalid(m.node.rowBatchTask, `rowBatchTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("creates task and shows loading indicator when conditions met")
+        function test_loadMoreRows_createsTask() as object
+            mockContent = { hasMoreRows: true, currentRowIndex: 10 }
+            m.node.content = mockContent
+            m.node.rowBatchTask = invalid
+            m.node.loadingIndicator = { visible: false }
+
+            ' bs:disable-next-line
+            loadMoreRows()
+
+            m.assertNotInvalid(m.node.rowBatchTask, `rowBatchTask should be created`)
+            m.assertTrue(m.node.loadingIndicator.visible, `loadingIndicator should be visible`)
+            m.assertEqual(m.node.rowBatchTask.startIndex, 10, `startIndex should be set`)
+
+            return invalid
+        end function
+
+        @it("uses 0 as default currentRowIndex when not set")
+        function test_loadMoreRows_defaultCurrentRowIndex() as object
+            mockContent = { hasMoreRows: true }
+            m.node.content = mockContent
+            m.node.rowBatchTask = invalid
+            m.node.loadingIndicator = { visible: false }
+
+            ' bs:disable-next-line
+            loadMoreRows()
+
+            m.assertEqual(m.node.rowBatchTask.startIndex, 0, `startIndex should default to 0`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onRowBatchComplete()")
+        '==============================================
+
+        @it("does nothing when content is invalid")
+        function test_onRowBatchComplete_invalidContent() as object
+            m.node.content = invalid
+            m.node.loadingIndicator = { visible: true }
+            m.node.rowBatchTask = {}
+
+            event = MockData.createMockBatchCompleteEvent([{}], 10, false)
+
+            ' bs:disable-next-line
+            onRowBatchComplete(event)
+
+            m.assertFalse(m.node.loadingIndicator.visible, `loadingIndicator should be hidden`)
+            m.assertInvalid(m.node.rowBatchTask, `rowBatchTask should be invalidated`)
+
+            return invalid
+        end function
+
+        @it("does nothing when rowNodes is invalid")
+        function test_onRowBatchComplete_invalidRowNodes() as object
+            mockContent = MockData.createMockContentNode(5, 5)
+            mockContent.currentRowIndex = 5
+            m.node.content = mockContent
+            m.node.loadingIndicator = { visible: true }
+            m.node.rowBatchTask = {}
+            m.node.rowList = { rowItemFocused: [0, 0] }
+
+            event = MockData.createMockBatchCompleteEvent(invalid, 10, false)
+
+            ' bs:disable-next-line
+            onRowBatchComplete(event)
+
+            m.assertEqual(mockContent.getChildCount(), 5, `Child count should remain unchanged`)
+
+            return invalid
+        end function
+
+        @it("appends rowNodes and updates content properties")
+        function test_onRowBatchComplete_appendsNodes() as object
+            mockContent = MockData.createMockContentNode(5, 5)
+            mockContent.currentRowIndex = 5
+            mockContent.hasMoreRows = true
+            m.node.content = mockContent
+            m.node.loadingIndicator = { visible: true }
+            m.node.rowBatchTask = {}
+            m.node.rowList = { rowItemFocused: [2, 3], jumpToRowItem: invalid }
+
+            newRows = [createObject("roSGNode", "ContentNode"), createObject("roSGNode", "ContentNode")]
+            event = MockData.createMockBatchCompleteEvent(newRows, 10, true)
+
+            ' bs:disable-next-line
+            onRowBatchComplete(event)
+
+            m.assertEqual(mockContent.getChildCount(), 7, `Should have appended 2 rows`)
+            m.assertEqual(mockContent.currentRowIndex, 15, `currentRowIndex should be updated`)
+            m.assertTrue(mockContent.hasMoreRows, `hasMoreRows should be updated`)
+            m.assertFalse(m.node.loadingIndicator.visible, `loadingIndicator should be hidden`)
+            m.assertInvalid(m.node.rowBatchTask, `rowBatchTask should be invalidated`)
+
+            return invalid
+        end function
+
+        @it("restores focus position after appending")
+        function test_onRowBatchComplete_restoresFocus() as object
+            mockContent = MockData.createMockContentNode(5, 5)
+            mockContent.currentRowIndex = 5
+            m.node.content = mockContent
+            m.node.loadingIndicator = { visible: true }
+            m.node.rowBatchTask = {}
+            m.node.rowList = { rowItemFocused: [2, 3], jumpToRowItem: invalid }
+
+            newRows = [createObject("roSGNode", "ContentNode")]
+            event = MockData.createMockBatchCompleteEvent(newRows, 10, false)
+
+            ' bs:disable-next-line
+            onRowBatchComplete(event)
+
+            m.assertEqual(m.node.rowList.jumpToRowItem[0], 2, `Should restore row focus`)
+            m.assertEqual(m.node.rowList.jumpToRowItem[1], 3, `Should restore item focus`)
+
+            return invalid
+        end function
+
+        @it("does not restore focus when currentFocus is invalid or incomplete")
+        @params(invalid)
+        @params([])
+        @params([0])
+        function test_onRowBatchComplete_noFocusRestore(currentFocus as dynamic) as object
+            mockContent = MockData.createMockContentNode(5, 5)
+            mockContent.currentRowIndex = 5
+            m.node.content = mockContent
+            m.node.loadingIndicator = { visible: true }
+            m.node.rowBatchTask = {}
+            m.node.rowList = { rowItemFocused: currentFocus, jumpToRowItem: invalid }
+
+            newRows = [createObject("roSGNode", "ContentNode")]
+            event = MockData.createMockBatchCompleteEvent(newRows, 10, false)
+
+            ' bs:disable-next-line
+            onRowBatchComplete(event)
+
+            m.assertInvalid(m.node.rowList.jumpToRowItem, `jumpToRowItem should remain invalid`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("loadMoreForRow()")
+        '==============================================
+
+        @it("returns early when paginationTask is already running")
+        function test_loadMoreForRow_taskAlreadyRunning() as object
+            existingTask = { control: "" }
+            m.node.paginationTask = existingTask
+            m.node.paginatingRowIndex = -1
+            rowNode = { hasMore: true, currentPage: 1, getChildCount: function() : return 10 : end function }
+
+            ' bs:disable-next-line
+            loadMoreForRow(0, rowNode)
+
+            m.assertEqual(m.node.paginatingRowIndex, -1, `paginatingRowIndex should remain unchanged`)
+
+            return invalid
+        end function
+
+        @it("returns early when hasMore is false")
+        function test_loadMoreForRow_noMoreItems() as object
+            m.node.paginationTask = invalid
+            m.node.paginatingRowIndex = -1
+            rowNode = { hasMore: false, currentPage: 1, getChildCount: function() : return 10 : end function }
+
+            ' bs:disable-next-line
+            loadMoreForRow(0, rowNode)
+
+            m.assertInvalid(m.node.paginationTask, `paginationTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("returns early when row has max items")
+        function test_loadMoreForRow_maxItemsReached() as object
+            m.node.paginationTask = invalid
+            m.node.paginatingRowIndex = -1
+            rowNode = { hasMore: true, currentPage: 5, getChildCount: function() : return 50 : end function }
+
+            ' bs:disable-next-line
+            loadMoreForRow(0, rowNode)
+
+            m.assertInvalid(m.node.paginationTask, `paginationTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("creates task when conditions are met")
+        function test_loadMoreForRow_createsTask() as object
+            m.node.paginationTask = invalid
+            m.node.paginatingRowIndex = -1
+            rowNode = {
+                hasMore: true,
+                currentPage: 2,
+                action: "flickr.recent",
+                params: { user_id: "123" },
+                getChildCount: function() : return 20 : end function
+            }
+
+            ' bs:disable-next-line
+            loadMoreForRow(3, rowNode)
+
+            m.assertNotInvalid(m.node.paginationTask, `paginationTask should be created`)
+            m.assertEqual(m.node.paginatingRowIndex, 3, `paginatingRowIndex should be set`)
+            m.assertEqual(m.node.paginationTask.action, "flickr.recent", `action should be set`)
+            m.assertEqual(m.node.paginationTask.page, 3, `page should be currentPage + 1`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onPaginationComplete()")
+        '==============================================
+
+        @it("clears task state even when images is invalid")
+        function test_onPaginationComplete_invalidImages() as object
+            m.node.paginationTask = {}
+            m.node.paginatingRowIndex = 2
+            m.node.content = MockData.createMockContentNode(3, 5)
+
+            event = { getData: function() : return invalid : end function }
+
+            ' bs:disable-next-line
+            onPaginationComplete(event)
+
+            m.assertInvalid(m.node.paginationTask, `paginationTask should be invalidated`)
+            m.assertEqual(m.node.paginatingRowIndex, -1, `paginatingRowIndex should be reset`)
+
+            return invalid
+        end function
+
+        @it("clears task state when images is empty")
+        function test_onPaginationComplete_emptyImages() as object
+            m.node.paginationTask = {}
+            m.node.paginatingRowIndex = 2
+            m.node.content = MockData.createMockContentNode(3, 5)
+
+            event = { getData: function() : return [] : end function }
+
+            ' bs:disable-next-line
+            onPaginationComplete(event)
+
+            m.assertInvalid(m.node.paginationTask, `paginationTask should be invalidated`)
+            m.assertEqual(m.node.paginatingRowIndex, -1, `paginatingRowIndex should be reset`)
+
+            return invalid
+        end function
+
+        @it("does nothing when rowNode is invalid")
+        function test_onPaginationComplete_invalidRowNode() as object
+            mockContent = MockData.createMockContentNode(1, 5)
+            m.node.content = mockContent
+            m.node.paginationTask = {}
+            m.node.paginatingRowIndex = 5
+
+            images = [{ thumbnailUrl: "http://test.jpg" }]
+            event = { getData: function() : return m.images : end function, images: images }
+
+            ' bs:disable-next-line
+            onPaginationComplete(event)
+
+            m.assertEqual(mockContent.getChild(0).getChildCount(), 5, `Row should remain unchanged`)
+
+            return invalid
+        end function
+
+        @it("appends images to row and updates pagination state")
+        function test_onPaginationComplete_appendsImages() as object
+            mockContent = MockData.createMockContentNode(3, 5)
+            rowNode = mockContent.getChild(1)
+            rowNode.currentPage = 1
+            rowNode.hasMore = true
+            m.node.content = mockContent
+            m.node.paginationTask = {}
+            m.node.paginatingRowIndex = 1
+
+            images = [
+                { thumbnailUrl: "http://test1.jpg" },
+                { thumbnailUrl: "http://test2.jpg" },
+                { thumbnailUrl: "http://test3.jpg" }
+            ]
+            event = { getData: function() : return m.images : end function, images: images }
+
+            ' bs:disable-next-line
+            onPaginationComplete(event)
+
+            m.assertEqual(rowNode.getChildCount(), 8, `Should have appended 3 images`)
+            m.assertEqual(rowNode.currentPage, 2, `currentPage should be incremented`)
+            m.assertInvalid(m.node.paginationTask, `paginationTask should be invalidated`)
+            m.assertEqual(m.node.paginatingRowIndex, -1, `paginatingRowIndex should be reset`)
+
+            return invalid
+        end function
+
+        @it("respects MAX_PER_ROW limit when appending")
+        function test_onPaginationComplete_respectsMaxLimit() as object
+            mockContent = MockData.createMockContentNode(1, 48)
+            rowNode = mockContent.getChild(0)
+            rowNode.currentPage = 4
+            rowNode.hasMore = true
+            m.node.content = mockContent
+            m.node.paginationTask = {}
+            m.node.paginatingRowIndex = 0
+
+            images = [
+                { thumbnailUrl: "http://test1.jpg" },
+                { thumbnailUrl: "http://test2.jpg" },
+                { thumbnailUrl: "http://test3.jpg" },
+                { thumbnailUrl: "http://test4.jpg" },
+                { thumbnailUrl: "http://test5.jpg" }
+            ]
+            event = { getData: function() : return m.images : end function, images: images }
+
+            ' bs:disable-next-line
+            onPaginationComplete(event)
+
+            m.assertEqual(rowNode.getChildCount(), 50, `Should only append up to MAX_PER_ROW (50)`)
+
+            return invalid
+        end function
+
+        @it("sets hasMore based on image count and remaining capacity")
+        @params(10, 30, true)
+        @params(5, 30, false)
+        @params(10, 45, false)
+        function test_onPaginationComplete_setsHasMore(imageCount as integer, startingItems as integer, expectedHasMore as boolean) as object
+            mockContent = MockData.createMockContentNode(1, startingItems)
+            rowNode = mockContent.getChild(0)
+            rowNode.currentPage = 3
+            rowNode.hasMore = true
+            m.node.content = mockContent
+            m.node.paginationTask = {}
+            m.node.paginatingRowIndex = 0
+
+            images = []
+            for i = 0 to imageCount - 1
+                images.push({ thumbnailUrl: "http://test" + i.toStr() + ".jpg" })
+            end for
+            event = { getData: function() : return m.images : end function, images: images }
+
+            ' bs:disable-next-line
+            onPaginationComplete(event)
+
+            m.assertEqual(rowNode.hasMore, expectedHasMore, `hasMore should be ${expectedHasMore}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onDestroy()")
+        '==============================================
+
+        @it("stops tasks and invalidates all m-scope variables")
+        @params(true, true)
+        @params(true, false)
+        @params(false, true)
+        @params(false, false)
+        function test_onDestroy(hasPaginationTask as boolean, hasRowBatchTask as boolean) as object
+            paginationTask = invalid
+            rowBatchTask = invalid
+
+            if hasPaginationTask
+                paginationTask = { control: "" }
+            end if
+            if hasRowBatchTask
+                rowBatchTask = { control: "" }
+            end if
+
+            m.node.paginationTask = paginationTask
+            m.node.rowBatchTask = rowBatchTask
+            m.node.rowList = {}
+            m.node.loadingIndicator = {}
+            m.node.content = {}
+            m.node.config = {}
+
+            ' bs:disable-next-line
+            onDestroy()
+
+            if hasPaginationTask
+                m.assertEqual(paginationTask.control, "stop", `paginationTask should be stopped`)
+            end if
+            if hasRowBatchTask
+                m.assertEqual(rowBatchTask.control, "stop", `rowBatchTask should be stopped`)
+            end if
+
+            m.assertInvalid(m.node.paginationTask, `paginationTask should be invalid`)
+            m.assertInvalid(m.node.rowBatchTask, `rowBatchTask should be invalid`)
+            m.assertInvalid(m.node.rowList, `rowList should be invalid`)
+            m.assertInvalid(m.node.loadingIndicator, `loadingIndicator should be invalid`)
+            m.assertInvalid(m.node.content, `content should be invalid`)
+            m.assertInvalid(m.node.config, `config should be invalid`)
+
+            return invalid
+        end function
+    end class
+end namespace

@@ -1,0 +1,13 @@
+sub init()
+    m.top.functionName = "getImageInfo"
+end sub
+
+sub getImageInfo()
+    imageId = m.top.imageId
+    provider = m.top.provider
+
+    if Common.Util.isEmptyString(imageId) or Common.Util.isEmptyString(provider) then return
+
+    imageInfo = ImageService.getImageInfo(provider, imageId)
+    if imageInfo <> invalid then m.top.imageInfo = imageInfo
+end sub

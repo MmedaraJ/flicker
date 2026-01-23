@@ -1,0 +1,20 @@
+namespace ContentTask
+    sub start()
+        m.contentTask = createObject("roSGNode", "mainLoaderTask")
+        m.contentTask.observeField("content", "onMainContentLoaded")
+        m.contentTask.observeField("loading", "onLoadingChanged")
+        m.contentTask.control = "run"
+        m.loadingIndicator.visible = true
+    end sub
+end namespace
+
+sub onMainContentLoaded()
+    m.gridScreen.content = m.contentTask.content
+end sub
+
+sub onLoadingChanged()
+    if m.contentTask.loading = false
+        m.loadingIndicator.visible = false
+        m.gridScreen.setFocus(true)
+    end if
+end sub

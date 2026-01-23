@@ -1,0 +1,298 @@
+namespace RowLoaderServiceTests
+    @suite("RowLoaderService tests")
+    class RowLoaderServiceTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("loadRows()")
+        '==============================================
+
+        @it("returns empty array for invalid rowConfigs")
+        function test_loadRows_invalidConfigs() as object
+            ' bs:disable-next-line
+            result = RowLoaderService.loadRows(invalid)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for invalid configs`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for empty rowConfigs array")
+        function test_loadRows_emptyConfigs() as object
+            ' bs:disable-next-line
+            result = RowLoaderService.loadRows([])
+
+            m.assertEqual(result.count(), 0, `Should return empty array for empty configs`)
+
+            return invalid
+        end function
+
+        @it("returns array type")
+        function test_loadRows_returnsArray() as object
+            ' bs:disable-next-line
+            result = RowLoaderService.loadRows([])
+
+            m.assertTrue(type(result) = "roArray", `Should return roArray type`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("_handleSuccessResponse()")
+        '==============================================
+
+        @it("returns invalid for invalid msg")
+        function test_handleSuccessResponse_invalidMsg() as object
+            rowConfig = { action: "flickr.recent", title: "Test" }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(invalid, rowConfig)
+
+            m.assertInvalid(result, `Should return invalid for invalid msg`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for invalid rowConfig")
+        function test_handleSuccessResponse_invalidRowConfig() as object
+            msg = m._createMockMsg("{}")
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, invalid)
+
+            m.assertInvalid(result, `Should return invalid for invalid rowConfig`)
+
+            return invalid
+        end function
+
+        @it("returns invalid when both params are invalid")
+        function test_handleSuccessResponse_bothInvalid() as object
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(invalid, invalid)
+
+            m.assertInvalid(result, `Should return invalid when both params invalid`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for empty response")
+        function test_handleSuccessResponse_emptyResponse() as object
+            msg = m._createMockMsg("{}")
+            rowConfig = { action: "flickr.recent", title: "Test" }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertInvalid(result, `Should return invalid for empty response`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for response with no photos")
+        function test_handleSuccessResponse_noPhotos() as object
+            msg = m._createMockMsg(formatJson({ stat: "ok" }))
+            rowConfig = { action: "flickr.recent", title: "Test" }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertInvalid(result, `Should return invalid when no photos in response`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for response with empty photos array")
+        function test_handleSuccessResponse_emptyPhotos() as object
+            response = { photos: { photo: [] } }
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "Test" }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertInvalid(result, `Should return invalid for empty photos array`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for malformed JSON")
+        function test_handleSuccessResponse_malformedJson() as object
+            msg = m._createMockMsg("not valid json {{{")
+            rowConfig = { action: "flickr.recent", title: "Test" }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertInvalid(result, `Should return invalid for malformed JSON`)
+
+            return invalid
+        end function
+
+        @it("creates rowNode with correct title")
+        function test_handleSuccessResponse_setsTitle() as object
+            response = m._createValidResponse(1)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "My Test Title", params: {} }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertEqual(result.title, "My Test Title", `rowNode title should match`)
+
+            return invalid
+        end function
+
+        @it("creates rowNode with action field")
+        function test_handleSuccessResponse_setsAction() as object
+            response = m._createValidResponse(1)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.search", title: "Test", params: { tags: "nature" } }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertEqual(result.action, "flickr.search", `rowNode action should match`)
+
+            return invalid
+        end function
+
+        @it("creates rowNode with params field")
+        function test_handleSuccessResponse_setsParams() as object
+            response = m._createValidResponse(1)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.search", title: "Test", params: { tags: "sunset" } }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertEqual(result.params.tags, "sunset", `rowNode params should match`)
+
+            return invalid
+        end function
+
+        @it("uses empty object when params is missing")
+        function test_handleSuccessResponse_missingParams() as object
+            response = m._createValidResponse(1)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "Test" }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertNotInvalid(result.params, `params should not be invalid`)
+
+            return invalid
+        end function
+
+        @it("sets currentPage to 1")
+        function test_handleSuccessResponse_setsCurrentPage() as object
+            response = m._createValidResponse(1)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "Test", params: {} }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertEqual(result.currentPage, 1, `currentPage should be 1`)
+
+            return invalid
+        end function
+
+        @it("sets hasMore to true when images count >= PAGE_SIZE")
+        function test_handleSuccessResponse_hasMoreTrue() as object
+            response = m._createValidResponse(HomePageConfig.PAGE_SIZE)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "Test", params: {} }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertTrue(result.hasMore, `hasMore should be true when count >= PAGE_SIZE`)
+
+            return invalid
+        end function
+
+        @it("sets hasMore to false when images count < PAGE_SIZE")
+        function test_handleSuccessResponse_hasMoreFalse() as object
+            response = m._createValidResponse(HomePageConfig.PAGE_SIZE - 1)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "Test", params: {} }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertFalse(result.hasMore, `hasMore should be false when count < PAGE_SIZE`)
+
+            return invalid
+        end function
+
+        @it("adds children to rowNode")
+        function test_handleSuccessResponse_addsChildren() as object
+            response = m._createValidResponse(3)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "Test", params: {} }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertEqual(result.getChildCount(), 3, `rowNode should have 3 children`)
+
+            return invalid
+        end function
+
+        @it("returns contentNode type")
+        function test_handleSuccessResponse_returnsContentNode() as object
+            response = m._createValidResponse(1)
+            msg = m._createMockMsg(formatJson(response))
+            rowConfig = { action: "flickr.recent", title: "Test", params: {} }
+
+            ' bs:disable-next-line
+            result = RowLoaderService._handleSuccessResponse(msg, rowConfig)
+
+            m.assertNotInvalid(result, `Should return valid rowNode`)
+            m.assertEqual(result.subtype(), "ContentNode", `Should be ContentNode type`)
+
+            return invalid
+        end function
+
+        '==============================================
+        ' Helper functions
+        '==============================================
+
+        function _createMockMsg(responseString as string) as object
+            return {
+                _responseString: responseString,
+                getString: function() as string
+                    return m._responseString
+                end function
+            }
+        end function
+
+        function _createValidResponse(photoCount as integer) as object
+            photos = []
+            for i = 0 to photoCount - 1
+                photos.push({
+                    id: i.toStr(),
+                    title: "Photo " + i.toStr(),
+                    server: "123",
+                    secret: "abc" + i.toStr(),
+                    description: { _content: "Description" },
+                    url_q: "http://thumb" + i.toStr() + ".jpg",
+                    url_b: "http://large" + i.toStr() + ".jpg"
+                })
+            end for
+
+            return {
+                photos: {
+                    photo: photos
+                }
+            }
+        end function
+    end class
+end namespace

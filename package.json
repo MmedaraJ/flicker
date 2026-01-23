@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "generate:secrets": "dotenv -e .env -- bash -c 'echo \"namespace Secrets\" > source/config/secrets.bs && echo \"    function getFlickrApiKey() as string\" >> source/config/secrets.bs && echo \"        return \\\"$FLICKR_API_KEY\\\"\" >> source/config/secrets.bs && echo \"    end function\" >> source/config/secrets.bs && echo \"end namespace\" >> source/config/secrets.bs'",
+    "build": "npm run generate:secrets && bsc",
+    "deploy": "npm run generate:secrets && dotenv -e .env -- bash -c 'bsc --host $ROKU_HOST --password $ROKU_PASSWORD'",
+    "build:test": "npm run generate:secrets && bsc --project bsconfig.test.json",
+    "test": "npm run generate:secrets && dotenv -e .env -- bash -c 'bsc --project bsconfig.test.json --host $ROKU_HOST --password $ROKU_PASSWORD'"
+  },
+  "dependencies": {
+    "brighterscript": "^0.67.4"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.2",
+    "rooibos-roku": "^5.15.7"
+  }
+}

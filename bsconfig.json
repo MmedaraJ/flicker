@@ -1,0 +1,16 @@
+{
+  "rootDir": ".",
+  "files": [
+    "manifest",
+    "source/**/*",
+    "!source/tests/**/*",
+    "components/**/*",
+    "images/**/*"
+  ],
+  "stagingDir": "out",
+  "autoImportComponentScript": true,
+  "sourceMap": false,
+  "createPackage": true,
+  "retainStagingDir": true,
+  "deploy": true
+}

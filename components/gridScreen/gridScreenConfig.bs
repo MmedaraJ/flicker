@@ -1,0 +1,10 @@
+namespace GridScreen
+    namespace Config
+        function get() as object
+            return {
+                rowThreshold: 3,
+                itemThreshold: 3
+            }
+        end function
+    end namespace
+end namespace

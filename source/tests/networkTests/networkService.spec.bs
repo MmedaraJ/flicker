@@ -1,0 +1,177 @@
+namespace NetworkServiceTests
+    @suite("NetworkService tests")
+    class NetworkServiceTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("createTransfer()")
+        '==============================================
+
+        @it("creates roURLTransfer object")
+        function test_createTransfer_createsObject() as object
+            url = "https://api.example.com/test"
+
+            ' bs:disable-next-line
+            result = NetworkService.createTransfer(url)
+
+            m.assertNotInvalid(result, `Should return a transfer object`)
+            m.assertEqual(type(result), "roUrlTransfer", `Should be roURLTransfer type, got ${type(result)}`)
+
+            return invalid
+        end function
+
+        @it("sets URL on transfer object")
+        function test_createTransfer_setsUrl() as object
+            url = "https://api.example.com/endpoint"
+
+            ' bs:disable-next-line
+            result = NetworkService.createTransfer(url)
+
+            m.assertEqual(result.getUrl(), url, `URL should be set on transfer`)
+
+            return invalid
+        end function
+
+        @it("handles different URL formats")
+        @params("https://api.flickr.com/services/rest/")
+        @params("https://example.com/path?param=value")
+        @params("https://test.com/a/b/c/d")
+        function test_createTransfer_variousUrls(url as string) as object
+            ' bs:disable-next-line
+            result = NetworkService.createTransfer(url)
+
+            m.assertEqual(result.getUrl(), url, `URL should be set correctly for ${url}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("startParallelRequests()")
+        '==============================================
+
+        @it("returns object with transfers and requestMap")
+        function test_startParallelRequests_returnStructure() as object
+            port = createObject("roMessagePort")
+            items = [
+                { url: "https://example.com/1", context: { id: 1 } }
+            ]
+
+            ' bs:disable-next-line
+            result = NetworkService.startParallelRequests(items, port)
+
+            m.assertNotInvalid(result.transfers, `Should have transfers array`)
+            m.assertNotInvalid(result.requestMap, `Should have requestMap`)
+
+            return invalid
+        end function
+
+        @it("creates correct number of transfers")
+        @params(1)
+        @params(3)
+        @params(5)
+        function test_startParallelRequests_transferCount(itemCount as integer) as object
+            port = createObject("roMessagePort")
+            items = []
+            for i = 0 to itemCount - 1
+                items.push({ url: "https://example.com/" + i.toStr(), context: { id: i } })
+            end for
+
+            ' bs:disable-next-line
+            result = NetworkService.startParallelRequests(items, port)
+
+            m.assertEqual(result.transfers.count(), itemCount, `Should create ${itemCount} transfers`)
+
+            return invalid
+        end function
+
+        @it("maps request IDs to contexts")
+        function test_startParallelRequests_mapsContexts() as object
+            port = createObject("roMessagePort")
+            context1 = { id: 1, name: "first" }
+            context2 = { id: 2, name: "second" }
+            items = [
+                { url: "https://example.com/1", context: context1 },
+                { url: "https://example.com/2", context: context2 }
+            ]
+
+            ' bs:disable-next-line
+            result = NetworkService.startParallelRequests(items, port)
+
+            m.assertEqual(result.requestMap.count(), 2, `Should have 2 entries in requestMap`)
+
+            return invalid
+        end function
+
+        @it("returns empty arrays for empty items")
+        function test_startParallelRequests_emptyItems() as object
+            port = createObject("roMessagePort")
+            items = []
+
+            ' bs:disable-next-line
+            result = NetworkService.startParallelRequests(items, port)
+
+            m.assertEqual(result.transfers.count(), 0, `Should have no transfers`)
+            m.assertEqual(result.requestMap.count(), 0, `Should have empty requestMap`)
+
+            return invalid
+        end function
+
+        @it("each transfer has unique identity in requestMap")
+        function test_startParallelRequests_uniqueIdentities() as object
+            port = createObject("roMessagePort")
+            items = [
+                { url: "https://example.com/1", context: { id: 1 } },
+                { url: "https://example.com/2", context: { id: 2 } },
+                { url: "https://example.com/3", context: { id: 3 } }
+            ]
+
+            ' bs:disable-next-line
+            result = NetworkService.startParallelRequests(items, port)
+
+            ' Each transfer's identity should be a key in requestMap
+            for each xfer in result.transfers
+                requestId = xfer.getIdentity().toStr()
+                m.assertNotInvalid(result.requestMap[requestId], `Request ID ${requestId} should be in requestMap`)
+            end for
+
+            return invalid
+        end function
+
+        @it("preserves context data in requestMap")
+        function test_startParallelRequests_preservesContext() as object
+            port = createObject("roMessagePort")
+            originalContext = { id: 42, title: "Test Title", extra: "data" }
+            items = [
+                { url: "https://example.com/test", context: originalContext }
+            ]
+
+            ' bs:disable-next-line
+            result = NetworkService.startParallelRequests(items, port)
+
+            xfer = result.transfers[0]
+            requestId = xfer.getIdentity().toStr()
+            storedContext = result.requestMap[requestId]
+
+            m.assertEqual(storedContext.id, 42, `Context id should be preserved`)
+            m.assertEqual(storedContext.title, "Test Title", `Context title should be preserved`)
+            m.assertEqual(storedContext.extra, "data", `Context extra should be preserved`)
+
+            return invalid
+        end function
+
+        @it("sets correct URL on each transfer")
+        function test_startParallelRequests_setsUrls() as object
+            port = createObject("roMessagePort")
+            items = [
+                { url: "https://example.com/first", context: {} },
+                { url: "https://example.com/second", context: {} }
+            ]
+
+            ' bs:disable-next-line
+            result = NetworkService.startParallelRequests(items, port)
+
+            m.assertEqual(result.transfers[0].getUrl(), "https://example.com/first", `First transfer URL should match`)
+            m.assertEqual(result.transfers[1].getUrl(), "https://example.com/second", `Second transfer URL should match`)
+
+            return invalid
+        end function
+    end class
+end namespace

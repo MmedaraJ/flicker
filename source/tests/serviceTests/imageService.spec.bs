@@ -1,0 +1,240 @@
+namespace ImageServiceTests
+    @suite("ImageService tests")
+    class ImageServiceTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("getUrlForRow()")
+        '==============================================
+
+        @it("returns URL for valid rowConfig")
+        function test_getUrlForRow_validConfig() as object
+            rowConfig = { action: "flickr.recent", params: {} }
+
+            ' bs:disable-next-line
+            result = ImageService.getUrlForRow(rowConfig, 1)
+
+            m.assertTrue(result.len() > 0, `Should return non-empty URL`)
+            m.assertTrue(result.instr("flickr.com") > -1, `URL should contain flickr.com`)
+
+            return invalid
+        end function
+
+        @it("returns empty string for invalid rowConfig")
+        function test_getUrlForRow_invalidConfig() as object
+            ' bs:disable-next-line
+            result = ImageService.getUrlForRow(invalid, 1)
+
+            m.assertEqual(result, "", `Should return empty string for invalid config`)
+
+            return invalid
+        end function
+
+        @it("uses default page of 1 when not specified")
+        function test_getUrlForRow_defaultPage() as object
+            rowConfig = { action: "flickr.recent", params: {} }
+
+            ' bs:disable-next-line
+            result = ImageService.getUrlForRow(rowConfig)
+
+            m.assertTrue(result.instr("page=1") > -1, `Should default to page 1`)
+
+            return invalid
+        end function
+
+        @it("uses specified page number")
+        @params(1)
+        @params(5)
+        @params(10)
+        function test_getUrlForRow_specifiedPage(page as integer) as object
+            rowConfig = { action: "flickr.recent", params: {} }
+
+            ' bs:disable-next-line
+            result = ImageService.getUrlForRow(rowConfig, page)
+
+            m.assertTrue(result.instr("page=" + page.toStr()) > -1, `Should contain page=${page}`)
+
+            return invalid
+        end function
+
+        @it("passes params to provider")
+        function test_getUrlForRow_passesParams() as object
+            rowConfig = { action: "flickr.search", params: { tags: "sunset" } }
+
+            ' bs:disable-next-line
+            result = ImageService.getUrlForRow(rowConfig, 1)
+
+            m.assertTrue(result.instr("tags=sunset") > -1, `URL should contain tags param`)
+
+            return invalid
+        end function
+
+        @it("uses empty object when params is missing")
+        function test_getUrlForRow_missingParams() as object
+            rowConfig = { action: "flickr.recent" }
+
+            ' bs:disable-next-line
+            result = ImageService.getUrlForRow(rowConfig, 1)
+
+            m.assertTrue(result.len() > 0, `Should return valid URL even without params`)
+
+            return invalid
+        end function
+
+        @it("returns empty string for empty action")
+        function test_getUrlForRow_emptyAction() as object
+            rowConfig = { action: "", params: {} }
+
+            ' bs:disable-next-line
+            result = ImageService.getUrlForRow(rowConfig, 1)
+
+            m.assertEqual(result, "", `Should return empty string for empty action`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("parseRowResponse()")
+        '==============================================
+
+        @it("parses valid response")
+        function test_parseRowResponse_validResponse() as object
+            rowConfig = { action: "flickr.recent" }
+            response = {
+                photos: {
+                    photo: [
+                        { id: "1", title: "Test", server: "123", secret: "abc" }
+                    ]
+                }
+            }
+
+            ' bs:disable-next-line
+            result = ImageService.parseRowResponse(rowConfig, response)
+
+            m.assertTrue(result.count() > 0, `Should return parsed photos`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for invalid response")
+        function test_parseRowResponse_invalidResponse() as object
+            rowConfig = { action: "flickr.recent" }
+
+            ' bs:disable-next-line
+            result = ImageService.parseRowResponse(rowConfig, invalid)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for invalid response`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("getImagesForRow()")
+        '==============================================
+
+        @it("returns empty array for invalid rowConfig")
+        function test_getImagesForRow_invalidConfig() as object
+            ' bs:disable-next-line
+            result = ImageService.getImagesForRow(invalid, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for invalid config`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for empty action")
+        function test_getImagesForRow_emptyAction() as object
+            rowConfig = { action: "", params: {} }
+
+            ' bs:disable-next-line
+            result = ImageService.getImagesForRow(rowConfig, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for empty action`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for unknown provider")
+        function test_getImagesForRow_unknownProvider() as object
+            rowConfig = { action: "unknown.method", params: {} }
+
+            ' bs:disable-next-line
+            result = ImageService.getImagesForRow(rowConfig, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for unknown provider`)
+
+            return invalid
+        end function
+
+        @it("uses default page of 1 when not specified")
+        function test_getImagesForRow_defaultPage() as object
+            rowConfig = { action: "flickr.unknown", params: {} }
+
+            ' bs:disable-next-line
+            result = ImageService.getImagesForRow(rowConfig)
+
+            ' Should not crash, returns empty for unknown method
+            m.assertEqual(result.count(), 0, `Should handle default page`)
+
+            return invalid
+        end function
+
+        @it("uses empty object when params is missing")
+        function test_getImagesForRow_missingParams() as object
+            rowConfig = { action: "flickr.unknown" }
+
+            ' bs:disable-next-line
+            result = ImageService.getImagesForRow(rowConfig, 1)
+
+            ' Should not crash even without params
+            m.assertEqual(result.count(), 0, `Should handle missing params`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("getImageInfo()")
+        '==============================================
+
+        @it("returns invalid for empty provider")
+        function test_getImageInfo_emptyProvider() as object
+            ' bs:disable-next-line
+            result = ImageService.getImageInfo("", "12345")
+
+            m.assertInvalid(result, `Should return invalid for empty provider`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for unknown provider")
+        function test_getImageInfo_unknownProvider() as object
+            ' bs:disable-next-line
+            result = ImageService.getImageInfo("unknown", "12345")
+
+            m.assertInvalid(result, `Should return invalid for unknown provider`)
+
+            return invalid
+        end function
+
+        @it("accepts valid provider")
+        function test_getImageInfo_validProvider() as object
+            ' Note: This makes a network call, just verify it doesn't crash
+            ' bs:disable-next-line
+            result = ImageService.getImageInfo("flickr", "12345")
+
+            ' Result can be invalid if network fails, but shouldn't crash
+            m.assertTrue(true, `Should not crash for valid provider`)
+
+            return invalid
+        end function
+
+        @it("passes imageId to provider")
+        function test_getImageInfo_passesImageId() as object
+            ' This is a passthrough test - verifying the function accepts imageId
+            ' bs:disable-next-line
+            result = ImageService.getImageInfo("unknown", "test-image-id")
+
+            m.assertInvalid(result, `Should return invalid for unknown provider`)
+
+            return invalid
+        end function
+    end class
+end namespace

@@ -1,0 +1,120 @@
+namespace HomePageConfig
+    const PAGE_SIZE = 10
+    const MAX_PER_ROW = 50
+    const ROWS_PER_PAGE = 10
+
+    function getRowBatch(startIndex as integer) as object
+        allRows = getRows()
+        allRowsCount = allRows.count()
+
+        endIndex = startIndex + ROWS_PER_PAGE - 1
+        if endIndex >= allRowsCount then endIndex = allRowsCount - 1
+
+        batch = []
+        for i = startIndex to endIndex
+            batch.push(allRows[i])
+        end for
+
+        return {
+            rows: batch,
+            hasMore: endIndex < allRowsCount - 1
+        }
+    end function
+
+    function getRows() as object
+        return [
+            { title: "Recent Photos", action: "flickr.recent" },
+            { title: "Popular from NASA", action: "flickr.popular", params: { user_id: "24662369@N07" } },
+            { title: "Popular from Smithsonian", action: "flickr.popular", params: { user_id: "25053835@N03" } },
+            { title: "Popular from Library of Congress", action: "flickr.popular", params: { user_id: "8623220@N02" } },
+            { title: "Popular from British Library", action: "flickr.popular", params: { user_id: "12403504@N02" } },
+            { title: "Popular from SpaceX", action: "flickr.popular", params: { user_id: "130608600@N05" } },
+            { title: "Popular from NOAA", action: "flickr.popular", params: { user_id: "51647007@N08" } },
+            { title: "Popular from US Fish & Wildlife", action: "flickr.popular", params: { user_id: "51986662@N05" } },
+            { title: "Latest from Internet Archive", action: "flickr.people", params: { user_id: "126377022@N07" } },
+            { title: "Latest from NY Public Library", action: "flickr.people", params: { user_id: "32951986@N05" } },
+            { title: "Latest from State Library NSW", action: "flickr.people", params: { user_id: "29454428@N08" } },
+            { title: "Latest from National Archives", action: "flickr.people", params: { user_id: "35740357@N03" } },
+            { title: "Latest from Boston Public Library", action: "flickr.people", params: { user_id: "24029425@N06" } },
+            { title: "Latest from The Field Museum", action: "flickr.people", params: { user_id: "35310696@N04" } },
+            { title: "Nature", action: "flickr.search", params: { tags: "nature" } },
+            { title: "Architecture", action: "flickr.search", params: { tags: "architecture" } },
+            { title: "Animals", action: "flickr.search", params: { tags: "animals" } },
+            { title: "Landscapes", action: "flickr.search", params: { tags: "landscape" } },
+            { title: "Portraits", action: "flickr.search", params: { tags: "portrait" } },
+            { title: "Street Photography", action: "flickr.search", params: { tags: "street" } },
+            { title: "Black & White", action: "flickr.search", params: { tags: "blackandwhite" } },
+            { title: "Sunsets", action: "flickr.search", params: { tags: "sunset" } },
+            { title: "Sunrises", action: "flickr.search", params: { tags: "sunrise" } },
+            { title: "Mountains", action: "flickr.search", params: { tags: "mountains" } },
+            { title: "Oceans", action: "flickr.search", params: { tags: "ocean" } },
+            { title: "Beaches", action: "flickr.search", params: { tags: "beach" } },
+            { title: "Forests", action: "flickr.search", params: { tags: "forest" } },
+            { title: "Deserts", action: "flickr.search", params: { tags: "desert" } },
+            { title: "Rivers", action: "flickr.search", params: { tags: "river" } },
+            { title: "Lakes", action: "flickr.search", params: { tags: "lake" } },
+            { title: "Waterfalls", action: "flickr.search", params: { tags: "waterfall" } },
+            { title: "Flowers", action: "flickr.search", params: { tags: "flowers" } },
+            { title: "Trees", action: "flickr.search", params: { tags: "trees" } },
+            { title: "Birds", action: "flickr.search", params: { tags: "birds" } },
+            { title: "Dogs", action: "flickr.search", params: { tags: "dogs" } },
+            { title: "Cats", action: "flickr.search", params: { tags: "cats" } },
+            { title: "Wildlife", action: "flickr.search", params: { tags: "wildlife" } },
+            { title: "Insects", action: "flickr.search", params: { tags: "insects" } },
+            { title: "Macro", action: "flickr.search", params: { tags: "macro" } },
+            { title: "Urban", action: "flickr.search", params: { tags: "urban" } },
+            { title: "Cityscapes", action: "flickr.search", params: { tags: "cityscape" } },
+            { title: "Skylines", action: "flickr.search", params: { tags: "skyline" } },
+            { title: "Buildings", action: "flickr.search", params: { tags: "buildings" } },
+            { title: "Bridges", action: "flickr.search", params: { tags: "bridge" } },
+            { title: "Roads", action: "flickr.search", params: { tags: "road" } },
+            { title: "Cars", action: "flickr.search", params: { tags: "cars" } },
+            { title: "Motorcycles", action: "flickr.search", params: { tags: "motorcycle" } },
+            { title: "Trains", action: "flickr.search", params: { tags: "train" } },
+            { title: "Planes", action: "flickr.search", params: { tags: "airplane" } },
+            { title: "Boats", action: "flickr.search", params: { tags: "boat" } },
+            { title: "Food", action: "flickr.search", params: { tags: "food" } },
+            { title: "Coffee", action: "flickr.search", params: { tags: "coffee" } },
+            { title: "Travel", action: "flickr.search", params: { tags: "travel" } },
+            { title: "Adventure", action: "flickr.search", params: { tags: "adventure" } },
+            { title: "Hiking", action: "flickr.search", params: { tags: "hiking" } },
+            { title: "Camping", action: "flickr.search", params: { tags: "camping" } },
+            { title: "Sports", action: "flickr.search", params: { tags: "sports" } },
+            { title: "Football", action: "flickr.search", params: { tags: "football" } },
+            { title: "Basketball", action: "flickr.search", params: { tags: "basketball" } },
+            { title: "Soccer", action: "flickr.search", params: { tags: "soccer" } },
+            { title: "Music", action: "flickr.search", params: { tags: "music" } },
+            { title: "Concerts", action: "flickr.search", params: { tags: "concert" } },
+            { title: "Festivals", action: "flickr.search", params: { tags: "festival" } },
+            { title: "Art", action: "flickr.search", params: { tags: "art" } },
+            { title: "Graffiti", action: "flickr.search", params: { tags: "graffiti" } },
+            { title: "Museums", action: "flickr.search", params: { tags: "museum" } },
+            { title: "History", action: "flickr.search", params: { tags: "history" } },
+            { title: "Vintage", action: "flickr.search", params: { tags: "vintage" } },
+            { title: "Retro", action: "flickr.search", params: { tags: "retro" } },
+            { title: "Abstract", action: "flickr.search", params: { tags: "abstract" } },
+            { title: "Minimalist", action: "flickr.search", params: { tags: "minimalist" } },
+            { title: "Patterns", action: "flickr.search", params: { tags: "pattern" } },
+            { title: "Textures", action: "flickr.search", params: { tags: "texture" } },
+            { title: "Colors", action: "flickr.search", params: { tags: "colorful" } },
+            { title: "Red", action: "flickr.search", params: { tags: "red" } },
+            { title: "Blue", action: "flickr.search", params: { tags: "blue" } },
+            { title: "Green", action: "flickr.search", params: { tags: "green" } },
+            { title: "Golden Hour", action: "flickr.search", params: { tags: "goldenhour" } },
+            { title: "Night", action: "flickr.search", params: { tags: "night" } },
+            { title: "Stars", action: "flickr.search", params: { tags: "stars" } },
+            { title: "Moon", action: "flickr.search", params: { tags: "moon" } },
+            { title: "Clouds", action: "flickr.search", params: { tags: "clouds" } },
+            { title: "Rain", action: "flickr.search", params: { tags: "rain" } },
+            { title: "Snow", action: "flickr.search", params: { tags: "snow" } },
+            { title: "Winter", action: "flickr.search", params: { tags: "winter" } },
+            { title: "Spring", action: "flickr.search", params: { tags: "spring" } },
+            { title: "Summer", action: "flickr.search", params: { tags: "summer" } },
+            { title: "Autumn", action: "flickr.search", params: { tags: "autumn" } },
+            { title: "Christmas", action: "flickr.search", params: { tags: "christmas" } },
+            { title: "Halloween", action: "flickr.search", params: { tags: "halloween" } },
+            { title: "Wedding", action: "flickr.search", params: { tags: "wedding" } },
+            { title: "Family", action: "flickr.search", params: { tags: "family" } }
+        ]
+    end function
+end namespace

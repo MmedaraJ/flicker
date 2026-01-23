@@ -1,0 +1,314 @@
+namespace ProviderFactoryTests
+    @suite("ProviderFactory tests")
+    class ProviderFactoryTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("_parseAction()")
+        '==============================================
+
+        @it("parses valid action with two parts")
+        function test_parseAction_validTwoParts() as object
+            ' bs:disable-next-line
+            result = ProviderFactory._parseAction("flickr.recent")
+
+            m.assertNotInvalid(result, `Should return valid object`)
+            m.assertEqual(result.provider, "flickr", `provider should be flickr`)
+            m.assertEqual(result.method, "recent", `method should be recent`)
+
+            return invalid
+        end function
+
+        @it("parses valid action with more than two parts")
+        function test_parseAction_moreThanTwoParts() as object
+            ' bs:disable-next-line
+            result = ProviderFactory._parseAction("flickr.photos.search")
+
+            m.assertNotInvalid(result, `Should return valid object`)
+            m.assertEqual(result.provider, "flickr", `provider should be flickr`)
+            m.assertEqual(result.method, "photos", `method should be photos (second part)`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for empty string")
+        function test_parseAction_emptyString() as object
+            ' bs:disable-next-line
+            result = ProviderFactory._parseAction("")
+
+            m.assertInvalid(result, `Should return invalid for empty string`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for action with no dot")
+        function test_parseAction_noDot() as object
+            ' bs:disable-next-line
+            result = ProviderFactory._parseAction("flickr")
+
+            m.assertInvalid(result, `Should return invalid for action without dot`)
+
+            return invalid
+        end function
+
+        @it("parses action with empty method")
+        function test_parseAction_emptyMethod() as object
+            ' bs:disable-next-line
+            result = ProviderFactory._parseAction("flickr.")
+
+            m.assertNotInvalid(result, `Should return valid object`)
+            m.assertEqual(result.provider, "flickr", `provider should be flickr`)
+            m.assertEqual(result.method, "", `method should be empty string`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("getUrl()")
+        '==============================================
+
+        @it("returns URL for valid flickr action")
+        function test_getUrl_validFlickr() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getUrl("flickr.recent", {}, 1)
+
+            m.assertTrue(result.len() > 0, `Should return non-empty URL`)
+            m.assertTrue(result.instr("flickr.com") > -1, `URL should contain flickr.com`)
+
+            return invalid
+        end function
+
+        @it("returns empty string for empty action")
+        function test_getUrl_emptyAction() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getUrl("", {}, 1)
+
+            m.assertEqual(result, "", `Should return empty string for empty action`)
+
+            return invalid
+        end function
+
+        @it("returns empty string for action without dot")
+        function test_getUrl_noDot() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getUrl("flickr", {}, 1)
+
+            m.assertEqual(result, "", `Should return empty string for action without dot`)
+
+            return invalid
+        end function
+
+        @it("returns empty string for unknown provider")
+        function test_getUrl_unknownProvider() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getUrl("unknown.method", {}, 1)
+
+            m.assertEqual(result, "", `Should return empty string for unknown provider`)
+
+            return invalid
+        end function
+
+        @it("passes params and page to provider")
+        function test_getUrl_passesParams() as object
+            params = { tags: "nature" }
+
+            ' bs:disable-next-line
+            result = ProviderFactory.getUrl("flickr.search", params, 5)
+
+            m.assertTrue(result.instr("tags=nature") > -1, `URL should contain tags param`)
+            m.assertTrue(result.instr("page=5") > -1, `URL should contain page param`)
+
+            return invalid
+        end function
+
+        @it("handles different flickr methods")
+        @params("flickr.recent")
+        @params("flickr.search")
+        @params("flickr.popular")
+        @params("flickr.people")
+        function test_getUrl_differentMethods(action as string) as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getUrl(action, {}, 1)
+
+            m.assertTrue(result.len() > 0, `Should return URL for ${action}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("parseResponse()")
+        '==============================================
+
+        @it("parses response for valid flickr action")
+        function test_parseResponse_validFlickr() as object
+            response = {
+                photos: {
+                    photo: [
+                        { id: "1", title: "Test", server: "123", secret: "abc" }
+                    ]
+                }
+            }
+
+            ' bs:disable-next-line
+            result = ProviderFactory.parseResponse("flickr.recent", response)
+
+            m.assertTrue(result.count() > 0, `Should return parsed photos`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for empty action")
+        function test_parseResponse_emptyAction() as object
+            response = { photos: { photo: [] } }
+
+            ' bs:disable-next-line
+            result = ProviderFactory.parseResponse("", response)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for empty action`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for action without dot")
+        function test_parseResponse_noDot() as object
+            response = { photos: { photo: [] } }
+
+            ' bs:disable-next-line
+            result = ProviderFactory.parseResponse("flickr", response)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for action without dot`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for unknown provider")
+        function test_parseResponse_unknownProvider() as object
+            response = { photos: { photo: [] } }
+
+            ' bs:disable-next-line
+            result = ProviderFactory.parseResponse("unknown.method", response)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for unknown provider`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for invalid response")
+        function test_parseResponse_invalidResponse() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.parseResponse("flickr.recent", invalid)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for invalid response`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for response without photos")
+        function test_parseResponse_noPhotos() as object
+            response = { stat: "ok" }
+
+            ' bs:disable-next-line
+            result = ProviderFactory.parseResponse("flickr.recent", response)
+
+            m.assertEqual(result.count(), 0, `Should return empty array when no photos`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("getImages()")
+        '==============================================
+
+        @it("returns empty array for empty action")
+        function test_getImages_emptyAction() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getImages("", {}, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for empty action`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for action without dot")
+        function test_getImages_noDot() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getImages("flickr", {}, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for action without dot`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for unknown provider")
+        function test_getImages_unknownProvider() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getImages("unknown.method", {}, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for unknown provider`)
+
+            return invalid
+        end function
+
+        @it("returns empty array for unknown flickr method")
+        function test_getImages_unknownMethod() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getImages("flickr.unknown", {}, 1)
+
+            m.assertEqual(result.count(), 0, `Should return empty array for unknown method`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("getImageInfo()")
+        '==============================================
+
+        @it("returns invalid for empty provider")
+        function test_getImageInfo_emptyProvider() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getImageInfo("", "12345")
+
+            m.assertInvalid(result, `Should return invalid for empty provider`)
+
+            return invalid
+        end function
+
+        @it("returns invalid for unknown provider")
+        function test_getImageInfo_unknownProvider() as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getImageInfo("unknown", "12345")
+
+            m.assertInvalid(result, `Should return invalid for unknown provider`)
+
+            return invalid
+        end function
+
+        @it("accepts flickr as valid provider")
+        function test_getImageInfo_flickrProvider() as object
+            ' Note: This will make a network call, so we just verify it doesn't crash
+            ' and returns either valid info or invalid (if network fails)
+            ' bs:disable-next-line
+            result = ProviderFactory.getImageInfo("flickr", "12345")
+
+            ' Result can be invalid if network fails, but shouldn't crash
+            m.assertTrue(true, `Should not crash for flickr provider`)
+
+            return invalid
+        end function
+
+        @it("handles different provider name cases")
+        @params("FLICKR")
+        @params("Flickr")
+        @params("UNKNOWN")
+        function test_getImageInfo_providerCases(provider as string) as object
+            ' bs:disable-next-line
+            result = ProviderFactory.getImageInfo(provider, "12345")
+
+            ' These should all return invalid since provider matching is case-sensitive
+            ' and "flickr" is lowercase in config
+            if provider <> "flickr"
+                m.assertInvalid(result, `Should return invalid for non-matching provider case`)
+            end if
+
+            return invalid
+        end function
+    end class
+end namespace

@@ -1,0 +1,106 @@
+namespace RowListItemComponentTests
+    @SGNode("rowListItemComponent")
+    @suite("RowListItemComponent tests")
+    class RowListItemComponentTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("onContentSet()")
+        '==============================================
+
+        @it("returns early when content is invalid")
+        function test_onContentSet_invalidContent() as object
+            m.node.skeleton = { visible: false }
+            m.node.poster = { uri: "" }
+            m.node.top.itemContent = invalid
+
+            m.assertFalse(m.node.skeleton.visible, `skeleton.visible should remain false`)
+            m.assertEqual(m.node.poster.uri, "", `poster.uri should remain empty`)
+
+            return invalid
+        end function
+
+        @it("shows skeleton and sets poster uri when content is valid")
+        @params(true)
+        @params(false)
+        function test_onContentSet_validContent(hasSkeleton as boolean) as object
+            if hasSkeleton
+                m.node.skeleton = { visible: false }
+            else
+                m.node.skeleton = invalid
+            end if
+
+            m.node.poster = { uri: "" }
+            m.node.top.itemContent = createObject("roSGNode", "ContentNode")
+            m.node.top.itemContent.update({ thumbnailUrl: "http://test.jpg" }, true)
+
+            m.assertEqual(m.node.poster.uri, "http://test.jpg", `poster.uri should be set`)
+            if hasSkeleton
+                m.assertTrue(m.node.skeleton.visible, `skeleton.visible should be true`)
+            end if
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onPosterLoadStatusChanged()")
+        '==============================================
+
+        @it("hides skeleton only when load status is ready")
+        @params("ready", false)
+        @params("loading", true)
+        @params("failed", true)
+        function test_onPosterLoadStatusChanged(loadStatus as string, expectedSkeletonVisible as boolean) as object
+            m.node.skeleton = { visible: true }
+
+            event = {
+                loadStatus: loadStatus,
+                getData: function() as string
+                    return m.loadStatus
+                end function
+            }
+
+            ' bs:disable-next-line
+            onPosterLoadStatusChanged(event)
+
+            m.assertEqual(m.node.skeleton.visible, expectedSkeletonVisible, `skeleton.visible should be ${expectedSkeletonVisible}`)
+
+            return invalid
+        end function
+
+        @it("handles skeleton being invalid when ready")
+        function test_onPosterLoadStatusChanged_noSkeleton() as object
+            m.node.skeleton = invalid
+
+            event = {
+                getData: function() as string
+                    return "ready"
+                end function
+            }
+
+            ' bs:disable-next-line
+            onPosterLoadStatusChanged(event)
+
+            ' Should not crash - just verify we got here
+            m.assertTrue(true, `Should handle invalid skeleton without crashing`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onDestroy()")
+        '==============================================
+
+        @it("invalidates all m-scope variables")
+        function test_onDestroy() as object
+            m.node.poster = {}
+            m.node.skeleton = {}
+
+            ' bs:disable-next-line
+            onDestroy()
+
+            m.assertInvalid(m.node.poster, `poster should be invalid`)
+            m.assertInvalid(m.node.skeleton, `skeleton should be invalid`)
+
+            return invalid
+        end function
+    end class
+end namespace

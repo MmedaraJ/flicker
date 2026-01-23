@@ -1,0 +1,17 @@
+sub init()
+    m.spinAnimation = m.top.findNode("spinAnimation")
+    m.top.observeFieldScoped("visible", "onVisibleChange")
+end sub
+
+sub onVisibleChange()
+    if m.top.visible
+        m.spinAnimation.control = "start"
+    else
+        m.spinAnimation.control = "stop"
+    end if
+end sub
+
+sub onDestroy()
+    if m.spinAnimation <> invalid then m.spinAnimation.control = "stop"
+    m.spinAnimation = invalid
+end sub

@@ -1,0 +1,155 @@
+namespace ImageModelTests
+    @suite("ImageModel tests")
+    class ImageModelTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("create()")
+        '==============================================
+
+        @it("creates model with all fields populated")
+        function test_create_allFields() as object
+            data = {
+                id: "12345",
+                provider: "flickr",
+                title: "Test Image",
+                description: "A test image description",
+                thumbnailUrl: "http://example.com/thumb.jpg",
+                largeUrl: "http://example.com/large.jpg",
+                width: 1920,
+                height: 1080
+            }
+
+            ' bs:disable-next-line
+            result = ImageModel.create(data)
+
+            m.assertEqual(result.id, "12345", `id should be set`)
+            m.assertEqual(result.provider, "flickr", `provider should be set`)
+            m.assertEqual(result.title, "Test Image", `title should be set`)
+            m.assertEqual(result.description, "A test image description", `description should be set`)
+            m.assertEqual(result.thumbnailUrl, "http://example.com/thumb.jpg", `thumbnailUrl should be set`)
+            m.assertEqual(result.largeUrl, "http://example.com/large.jpg", `largeUrl should be set`)
+            m.assertEqual(result.width, 1920, `width should be set`)
+            m.assertEqual(result.height, 1080, `height should be set`)
+
+            return invalid
+        end function
+
+        @it("creates model with missing optional fields as invalid")
+        function test_create_missingFields() as object
+            data = {
+                id: "12345",
+                provider: "flickr"
+            }
+
+            ' bs:disable-next-line
+            result = ImageModel.create(data)
+
+            m.assertEqual(result.id, "12345", `id should be set`)
+            m.assertEqual(result.provider, "flickr", `provider should be set`)
+            m.assertInvalid(result.title, `title should be invalid when not provided`)
+            m.assertInvalid(result.description, `description should be invalid when not provided`)
+            m.assertInvalid(result.thumbnailUrl, `thumbnailUrl should be invalid when not provided`)
+            m.assertInvalid(result.largeUrl, `largeUrl should be invalid when not provided`)
+            m.assertInvalid(result.width, `width should be invalid when not provided`)
+            m.assertInvalid(result.height, `height should be invalid when not provided`)
+
+            return invalid
+        end function
+
+        @it("creates model with empty string values")
+        function test_create_emptyStrings() as object
+            data = {
+                id: "",
+                provider: "",
+                title: "",
+                description: "",
+                thumbnailUrl: "",
+                largeUrl: "",
+                width: 0,
+                height: 0
+            }
+
+            ' bs:disable-next-line
+            result = ImageModel.create(data)
+
+            m.assertEqual(result.id, "", `id should be empty string`)
+            m.assertEqual(result.provider, "", `provider should be empty string`)
+            m.assertEqual(result.title, "", `title should be empty string`)
+            m.assertEqual(result.description, "", `description should be empty string`)
+            m.assertEqual(result.thumbnailUrl, "", `thumbnailUrl should be empty string`)
+            m.assertEqual(result.largeUrl, "", `largeUrl should be empty string`)
+            m.assertEqual(result.width, 0, `width should be 0`)
+            m.assertEqual(result.height, 0, `height should be 0`)
+
+            return invalid
+        end function
+
+        @it("creates model and ignores extra fields in data")
+        function test_create_extraFields() as object
+            data = {
+                id: "12345",
+                provider: "flickr",
+                title: "Test",
+                description: "Desc",
+                thumbnailUrl: "http://thumb.jpg",
+                largeUrl: "http://large.jpg",
+                width: 800,
+                height: 600,
+                extraField: "should be ignored",
+                anotherExtra: 999
+            }
+
+            ' bs:disable-next-line
+            result = ImageModel.create(data)
+
+            m.assertEqual(result.id, "12345", `id should be set`)
+            m.assertInvalid(result.extraField, `extraField should not exist in result`)
+            m.assertInvalid(result.anotherExtra, `anotherExtra should not exist in result`)
+
+            return invalid
+        end function
+
+        @it("creates model with different data types")
+        function test_create_differentTypes() as object
+            data = {
+                id: 12345,
+                provider: "flickr",
+                title: "Test",
+                description: "Desc",
+                thumbnailUrl: "http://thumb.jpg",
+                largeUrl: "http://large.jpg",
+                width: "800",
+                height: "600"
+            }
+
+            ' bs:disable-next-line
+            result = ImageModel.create(data)
+
+            m.assertEqual(result.id, 12345, `id should preserve integer type`)
+            m.assertEqual(result.width, "800", `width should preserve string type`)
+            m.assertEqual(result.height, "600", `height should preserve string type`)
+
+            return invalid
+        end function
+
+        @it("returns object with exactly 8 properties")
+        function test_create_propertyCount() as object
+            data = {
+                id: "12345",
+                provider: "flickr",
+                title: "Test",
+                description: "Desc",
+                thumbnailUrl: "http://thumb.jpg",
+                largeUrl: "http://large.jpg",
+                width: 800,
+                height: 600
+            }
+
+            ' bs:disable-next-line
+            result = ImageModel.create(data)
+
+            m.assertEqual(result.keys().count(), 8, `Result should have exactly 8 properties`)
+
+            return invalid
+        end function
+    end class
+end namespace

@@ -1,0 +1,16 @@
+sub init()
+    m.top.functionName = "loadBatch"
+end sub
+
+sub loadBatch()
+    startIndex = m.top.startIndex
+    batch = HomePageConfig.getRowBatch(startIndex)
+    rows = batch?.rows
+    rowNodes = RowLoaderService.loadRows(rows)
+
+    if not Common.Util.isArray(rowNodes) then return
+
+    m.top.hasMore = batch.hasMore ?? false
+    if Common.Util.isArray(rows) then m.top.batchSize = rows.count()
+    m.top.rowNodes = rowNodes
+end sub

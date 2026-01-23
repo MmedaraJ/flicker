@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="detailsScreen" extends="Group">
+    <interface>
+        <field id="content" type="node" onChange="onContentChange" />
+    </interface>
+
+    <script type="text/brightscript" uri="pkg:/source/utils/common.bs" />
+    <script type="text/brightscript" uri="detailsScreenConfig.bs" />
+
+    <children>
+        <LayoutGroup
+            id="pageContainer"
+            translation="[60, 50]"
+            layoutDirection="vert"
+            itemSpacings="[30]"
+        >
+            <Label
+                id="titleLabel"
+                width="1160"
+                maxLines="2"
+                wrap="true"
+                font="font:LargeBoldSystemFont"
+            />
+
+            <Group id="contentRow">
+                <LayoutGroup
+                    id="imageColumn"
+                    layoutDirection="vert"
+                    itemSpacings="[15]"
+                >
+                    <Group id="posterContainer">
+                        <Rectangle
+                            id="posterSkeleton"
+                            color="0x333333FF"
+                            visible="false"
+                        />
+                        <Poster
+                            id="poster"
+                            loadWidth="600"
+                            loadHeight="400"
+                            loadDisplayMode="scaleToFit"
+                        />
+                    </Group>
+
+                    <Label
+                        id="dimensionLabel"
+                        width="600"
+                        font="font:TinyBoldSystemFont"
+                        color="0xFFFFFFFF"
+                    />
+
+                    <Label
+                        id="sizeLabel"
+                        width="600"
+                        font="font:TinyBoldSystemFont"
+                        color="0xFFFFFFFF"
+                    />
+                </LayoutGroup>
+
+                <Label
+                    id="descriptionLabel"
+                    maxLines="16"
+                    wrap="true"
+                    font="font:SmallSystemFont"
+                    color="0xFFFFFFFF"
+                />
+            </Group>
+        </LayoutGroup>
+    </children>
+</component>

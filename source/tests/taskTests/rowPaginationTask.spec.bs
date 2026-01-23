@@ -1,0 +1,19 @@
+namespace RowPaginationTaskTests
+    @SGNode("rowPaginationTask")
+    @suite("RowPaginationTask tests")
+    class RowPaginationTaskTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("init()")
+        '==============================================
+
+        @it("sets functionName to loadMoreImages")
+        function test_init_setsFunctionName() as object
+            ' bs:disable-next-line
+            init()
+
+            m.assertEqual(m.node.top.functionName, "loadMoreImages", `functionName should be set to "loadMoreImages"`)
+
+            return invalid
+        end function
+    end class
+end namespace

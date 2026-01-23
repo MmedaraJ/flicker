@@ -1,0 +1,59 @@
+namespace MockData
+    function getDetailsScreenStyles() as object
+        return {
+            screenWidth: 1280,
+            contentLeftMargin: 60,
+            rightMargin: 60,
+            imageDescriptionGap: 60,
+            poster: {
+                maxWidth: 600,
+                maxHeight: 400
+            }
+        }
+    end function
+
+    function getDetailsScreenStrings() as object
+        return {
+            dimensionLabel: "Dimension: {0} x {1} pixels",
+            sizeLabel: "Size: {0}"
+        }
+    end function
+
+    function getGridScreenConfig() as object
+        return {
+            rowThreshold: 3,
+            itemThreshold: 3
+        }
+    end function
+
+    function createMockContentNode(rowCount as integer, itemsPerRow as integer) as object
+        contentNode = createObject("roSGNode", "ContentNode")
+
+        for r = 0 to rowCount - 1
+            rowNode = createObject("roSGNode", "ContentNode")
+            rowNode.addFields({ hasMore: false, currentPage: 1, action: "", params: {} })
+
+            for i = 0 to itemsPerRow - 1
+                itemNode = createObject("roSGNode", "ContentNode")
+                rowNode.appendChild(itemNode)
+            end for
+
+            contentNode.appendChild(rowNode)
+        end for
+
+        contentNode.addFields({ hasMoreRows: false, currentRowIndex: 0 })
+
+        return contentNode
+    end function
+
+    function createMockBatchCompleteEvent(rowNodes as dynamic, batchSize as integer, hasMore as boolean) as object
+        task = { batchSize: batchSize, hasMore: hasMore }
+
+        return {
+            getData: function() : return m.rowNodes : end function,
+            getRoSGNode: function() : return m.task : end function,
+            rowNodes: rowNodes,
+            task: task
+        }
+    end function
+end namespace

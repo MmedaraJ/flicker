@@ -1,0 +1,356 @@
+import "pkg:/source/tests/mockData.bs"
+
+namespace DetailsScreenTests
+    @SGNode("detailsScreen")
+    @suite("DetailsScreen tests")
+    class DetailsScreenTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("onVisibleChange()")
+        '==============================================
+
+        @setup
+        protected override function setup() as object
+            m.node.styles = MockData.getDetailsScreenStyles()
+            m.node.strings = MockData.getDetailsScreenStrings()
+
+            return invalid
+        end function
+
+        @it("sets focus when visible is true, does nothing when false")
+        @params(true, true)
+        @params(false, false)
+        function test_onVisibleChange(visible as boolean, expectedFocusCalled as boolean) as object
+            m.node.top = { visible: visible, setFocusCalled: false }
+            m.node.top.setFocus = sub(focus as boolean)
+                m.setFocusCalled = true
+            end sub
+
+            ' bs:disable-next-line
+            onVisibleChange()
+
+            m.assertEqual(m.node.top.setFocusCalled, expectedFocusCalled, `Expected setFocusCalled to be ${expectedFocusCalled}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onContentChange()")
+        '==============================================
+
+        @it("returns early when content is invalid")
+        function test_onContentChange_invalidContent() as object
+            m.node.top = { content: invalid }
+            m.node.posterLoaded = true
+            m.node.posterSkeleton = { visible: true }
+
+            ' bs:disable-next-line
+            onContentChange()
+
+            m.assertTrue(m.node.posterLoaded, `posterLoaded should remain true`)
+            m.assertTrue(m.node.posterSkeleton.visible, `posterSkeleton.visible should remain true`)
+
+            return invalid
+        end function
+
+        @it("sets up content correctly when valid")
+        function test_onContentChange_validContent() as object
+            m.node.top = { content: { largeUrl: "http://test.jpg", title: "Test Title", description: "Test Desc", width: 800, height: 600 } }
+            m.node.posterLoaded = true
+            m.node.posterSkeleton = { visible: true, width: 0, height: 0 }
+            m.node.poster = { uri: "" }
+            m.node.titleLabel = { text: "" }
+            m.node.descriptionLabel = { text: "", translation: [0, 0], width: 0 }
+            m.node.imageInfoTask = invalid
+
+            ' bs:disable-next-line
+            onContentChange()
+
+            m.assertFalse(m.node.posterLoaded, `posterLoaded should be false`)
+            m.assertEqual(m.node.poster.uri, "http://test.jpg", `poster.uri should be set`)
+            m.assertEqual(m.node.titleLabel.text, "Test Title", `titleLabel.text should be set`)
+            m.assertEqual(m.node.descriptionLabel.text, "Test Desc", `descriptionLabel.text should be set`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("showSkeleton()")
+        '==============================================
+
+        @it("returns early when posterLoaded is true or imageHeight < 1")
+        @params(true, 800, 600, false)
+        @params(false, 800, 0, false)
+        @params(false, 800, -1, false)
+        @params(false, 800, 600, true)
+        function test_showSkeleton(posterLoaded as boolean, imageWidth as integer, imageHeight as integer, expectSkeletonVisible as boolean) as object
+            m.node.posterLoaded = posterLoaded
+            m.node.posterSkeleton = { visible: false, width: 0, height: 0 }
+            m.node.descriptionLabel = { translation: [0, 0], width: 0 }
+
+            ' bs:disable-next-line
+            showSkeleton(imageWidth, imageHeight)
+
+            m.assertEqual(m.node.posterSkeleton.visible, expectSkeletonVisible, `Expected posterSkeleton.visible to be ${expectSkeletonVisible}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onPosterLoadStatusChange()")
+        '==============================================
+
+        @it("handles different load statuses")
+        @params("loading", false, true)
+        @params("failed", false, true)
+        @params("ready", true, false)
+        function test_onPosterLoadStatusChange(loadStatus as string, expectedPosterLoaded as boolean, expectedSkeletonVisible as boolean) as object
+            m.node.posterLoaded = false
+            m.node.posterSkeleton = { visible: true }
+            m.node.poster = { bitmapWidth: 800, bitmapHeight: 600 }
+            m.node.descriptionLabel = { translation: [0, 0], width: 0 }
+
+            event = { getData: function() : return m.loadStatus : end function, loadStatus: loadStatus }
+
+            ' bs:disable-next-line
+            onPosterLoadStatusChange(event)
+
+            m.assertEqual(m.node.posterLoaded, expectedPosterLoaded, `Expected posterLoaded to be ${expectedPosterLoaded}`)
+            m.assertEqual(m.node.posterSkeleton.visible, expectedSkeletonVisible, `Expected posterSkeleton.visible to be ${expectedSkeletonVisible}`)
+
+            return invalid
+        end function
+
+        @it("calls positionDescription when ready and bitmapHeight > 0")
+        function test_onPosterLoadStatusChange_positionsDescription() as object
+            m.node.posterLoaded = false
+            m.node.posterSkeleton = { visible: true }
+            m.node.poster = { bitmapWidth: 1200, bitmapHeight: 400 }
+            m.node.descriptionLabel = { translation: [0, 0], width: 0 }
+
+            event = { getData: function() : return "ready" : end function }
+
+            ' bs:disable-next-line
+            onPosterLoadStatusChange(event)
+
+            m.assertEqual(m.node.descriptionLabel.translation[0].toStr(), "660", `Expected translation[0] to be 660`)
+
+            return invalid
+        end function
+
+        @it("does not call positionDescription when bitmapHeight is 0")
+        function test_onPosterLoadStatusChange_noBitmapHeight() as object
+            m.node.posterLoaded = false
+            m.node.posterSkeleton = { visible: true }
+            m.node.poster = { bitmapWidth: 800, bitmapHeight: 0 }
+            m.node.descriptionLabel = { translation: [0, 0], width: 0 }
+
+            event = { getData: function() : return "ready" : end function }
+
+            ' bs:disable-next-line
+            onPosterLoadStatusChange(event)
+
+            m.assertEqual(m.node.descriptionLabel.translation[0], 0, `Expected translation[0] to remain 0`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("positionDescription()")
+        '==============================================
+
+        @it("positions description correctly with various inputs")
+        @params(600, 400, 600, true, 660, 500)
+        @params(300, 400, 300, true, 360, 800)
+        @params(400, 300, 400, true, 460, 700)
+        @params(200, 400, 200, true, 260, 900)
+        @params(1200, 400, 0, false, 660, 500)
+        @params(300, 600, 0, false, 260, 900)
+        @params(600, 400, 0, false, 660, 500)
+        function test_positionDescription(imageWidth as integer, imageHeight as integer, displayWidth as integer, useDisplaySize as boolean, expectedX as integer, expectedWidth as integer) as object
+            m.node.descriptionLabel = { translation: [0, 0], width: 0 }
+
+            displaySizeObject = invalid
+            if useDisplaySize then displaySizeObject = { width: displayWidth, height: 400 }
+
+            ' bs:disable-next-line
+            positionDescription(imageWidth, imageHeight, displaySizeObject)
+
+            m.assertEqual(m.node.descriptionLabel.translation[0].toStr(), expectedX.toStr(), `Expected translation[0] to be ${expectedX}, got ${m.node.descriptionLabel.translation[0]}`)
+            m.assertEqual(m.node.descriptionLabel.translation[1], 0, `Expected translation[1] to be 0`)
+            m.assertEqual(m.node.descriptionLabel.width.toStr(), expectedWidth.toStr(), `Expected width to be ${expectedWidth}, got ${m.node.descriptionLabel.width}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("calculateDisplaySize()")
+        '==============================================
+
+        @it("calculates display size for wide and tall images")
+        @params(1200, 400, 600, 200)
+        @params(1800, 600, 600, 200)
+        @params(900, 450, 600, 300)
+        @params(300, 600, 200, 400)
+        @params(400, 800, 200, 400)
+        @params(200, 400, 200, 400)
+        @params(600, 400, 600, 400)
+        @params(300, 200, 600, 400)
+        function test_calculateDisplaySize(imageWidth as integer, imageHeight as integer, expectedWidth as integer, expectedHeight as integer) as object
+            ' bs:disable-next-line
+            result = calculateDisplaySize(imageWidth, imageHeight)
+
+            m.assertEqual(result.width.toStr(), expectedWidth.toStr(), `Expected width to be ${expectedWidth}, got ${result.width}`)
+            m.assertEqual(result.height.toStr(), expectedHeight.toStr(), `Expected height to be ${expectedHeight}, got ${result.height}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("fetchImageInfo()")
+        '==============================================
+
+        @it("returns early when imageId or provider is empty")
+        @params(invalid, "flickr")
+        @params("", "flickr")
+        @params("123", invalid)
+        @params("123", "")
+        @params(invalid, invalid)
+        function test_fetchImageInfo_earlyReturn(imageId as dynamic, provider as dynamic) as object
+            content = { id: imageId, provider: provider }
+            m.node.imageInfoTask = invalid
+
+            ' bs:disable-next-line
+            fetchImageInfo(content)
+
+            m.assertInvalid(m.node.imageInfoTask, `imageInfoTask should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("stops existing task and creates new one when valid")
+        function test_fetchImageInfo_createsTask() as object
+            existingTask = { control: "" }
+            m.node.imageInfoTask = existingTask
+            content = { id: "12345", provider: "flickr" }
+
+            ' bs:disable-next-line
+            fetchImageInfo(content)
+
+            m.assertEqual(existingTask.control, "stop", `Existing task should be stopped`)
+            m.assertNotInvalid(m.node.imageInfoTask, `New imageInfoTask should be created`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onImageInfoReceived()")
+        '==============================================
+
+        @it("returns early when imageInfo is invalid")
+        function test_onImageInfoReceived_invalidInfo() as object
+            m.node.dimensionLabel = { text: "" }
+            m.node.sizeLabel = { text: "" }
+            m.node.posterSkeleton = { visible: false, width: 0, height: 0 }
+            m.node.posterLoaded = false
+
+            event = { getData: function() : return invalid : end function }
+
+            ' bs:disable-next-line
+            onImageInfoReceived(event)
+
+            m.assertEqual(m.node.dimensionLabel.text, "", `dimensionLabel should remain empty`)
+
+            return invalid
+        end function
+
+        @it("sets labels when width and height are valid")
+        @params("1024", "768", "Large", true)
+        @params("800", "600", "", false)
+        @params("1920", "1080", "Original", true)
+        function test_onImageInfoReceived_setsLabels(width as string, height as string, sizeLabel as string, expectSizeLabel as boolean) as object
+            m.node.dimensionLabel = { text: "" }
+            m.node.sizeLabel = { text: "" }
+            m.node.posterSkeleton = { visible: false, width: 0, height: 0 }
+            m.node.descriptionLabel = { translation: [0, 0], width: 0 }
+            m.node.posterLoaded = false
+
+            imageInfo = { width: width, height: height, sizeLabel: sizeLabel }
+            event = { getData: function() : return m.imageInfo : end function, imageInfo: imageInfo }
+
+            ' bs:disable-next-line
+            onImageInfoReceived(event)
+
+            expectedDimensionText = "Dimension: " + width + " x " + height + " pixels"
+            m.assertEqual(m.node.dimensionLabel.text, expectedDimensionText, `dimensionLabel should be set`)
+
+            if expectSizeLabel
+                expectedSizeText = "Size: " + sizeLabel
+                m.assertEqual(m.node.sizeLabel.text, expectedSizeText, `sizeLabel should be set`)
+            else
+                m.assertEqual(m.node.sizeLabel.text, "", `sizeLabel should remain empty`)
+            end if
+
+            return invalid
+        end function
+
+        @it("returns early when width or height is empty")
+        @params("", "600")
+        @params("800", "")
+        @params("", "")
+        function test_onImageInfoReceived_emptyDimensions(width as string, height as string) as object
+            m.node.dimensionLabel = { text: "" }
+            m.node.sizeLabel = { text: "" }
+            m.node.posterLoaded = false
+
+            imageInfo = { width: width, height: height, sizeLabel: "Large" }
+            event = { getData: function() : return m.imageInfo : end function, imageInfo: imageInfo }
+
+            ' bs:disable-next-line
+            onImageInfoReceived(event)
+
+            m.assertEqual(m.node.dimensionLabel.text, "", `dimensionLabel should remain empty`)
+            m.assertEqual(m.node.sizeLabel.text, "", `sizeLabel should remain empty`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("onDestroy()")
+        '==============================================
+
+        @it("stops task and invalidates all m-scope variables")
+        @params(true)
+        @params(false)
+        function test_onDestroy(hasExistingTask as boolean) as object
+            existingTask = invalid
+            if hasExistingTask
+                existingTask = { control: "" }
+            end if
+            m.node.imageInfoTask = existingTask
+            m.node.poster = {}
+            m.node.posterSkeleton = {}
+            m.node.titleLabel = {}
+            m.node.descriptionLabel = {}
+            m.node.dimensionLabel = {}
+            m.node.sizeLabel = {}
+
+            ' bs:disable-next-line
+            onDestroy()
+
+            if hasExistingTask
+                m.assertEqual(existingTask.control, "stop", `Existing task should be stopped`)
+            end if
+            m.assertInvalid(m.node.imageInfoTask, `imageInfoTask should be invalid`)
+            m.assertInvalid(m.node.poster, `poster should be invalid`)
+            m.assertInvalid(m.node.posterSkeleton, `posterSkeleton should be invalid`)
+            m.assertInvalid(m.node.titleLabel, `titleLabel should be invalid`)
+            m.assertInvalid(m.node.descriptionLabel, `descriptionLabel should be invalid`)
+            m.assertInvalid(m.node.dimensionLabel, `dimensionLabel should be invalid`)
+            m.assertInvalid(m.node.sizeLabel, `sizeLabel should be invalid`)
+            m.assertInvalid(m.node.styles, `styles should be invalid`)
+            m.assertInvalid(m.node.strings, `strings should be invalid`)
+
+            return invalid
+        end function
+    end class
+end namespace

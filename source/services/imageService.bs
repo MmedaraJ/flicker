@@ -1,0 +1,27 @@
+namespace ImageService
+    function getUrlForRow(rowConfig as object, page = 1 as integer) as string
+        if Common.Util.isInvalid(rowConfig) then return ""
+        
+        action = rowConfig.action
+        params = rowConfig.params ?? {}
+
+        return ProviderFactory.getUrl(action, params, page)
+    end function
+
+    function parseRowResponse(rowConfig as object, response as object) as object
+        return ProviderFactory.parseResponse(rowConfig?.action, response)
+    end function
+
+    function getImagesForRow(rowConfig as object, page = 1 as integer) as object
+        if Common.Util.isInvalid(rowConfig) then return []
+
+        action = rowConfig.action
+        params = rowConfig.params ?? {}
+
+        return ProviderFactory.getImages(action, params, page)
+    end function
+
+    function getImageInfo(provider as string, imageId as string) as object
+        return ProviderFactory.getImageInfo(provider, imageId)
+    end function
+end namespace

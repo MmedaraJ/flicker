@@ -1,0 +1,265 @@
+namespace CommonUtilTests
+    @suite("Common Utils Tests")
+    class CommonUtilTests extends Rooibos.BaseTestSuite ' bs:disable-line
+
+        '=====================================================
+        @describe("Testing Common.Util.isInvalid")
+        '=====================================================
+
+        @it("Common.Util.isInvalid")
+        @params("", false)
+        @params(" ", false)
+        @params("known text", false)
+        @params(-1, false)
+        @params(1, false)
+        @params({}, false)
+        @params([], false)
+        @params(true, false)
+        @params(invalid, true)
+        sub test_isInvalid(value as dynamic, expected as boolean)
+            result = Common.Util.isInvalid(value) ' bs:disable-line
+            m.assertEqual(expected, result)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.isString")
+        '=====================================================
+
+        @it("Common.Util.isString")
+        @params("", true)
+        @params(" ", true)
+        @params("known text", true)
+        @params(-1, false)
+        @params(1, false)
+        @params({}, false)
+        @params([], false)
+        @params(true, false)
+        @params(invalid, false)
+        sub test_isString(value as dynamic, expected as boolean)
+            result = Common.Util.isString(value) ' bs:disable-line
+            m.assertEqual(expected, result)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.isEmptyString")
+        '=====================================================
+
+        @it("Common.Util.isEmptyString returns true for empty string and non-strings")
+        @params("", true)
+        @params(" ", false)
+        @params("known text", false)
+        @params(-1, true)
+        @params(1, true)
+        @params({}, true)
+        @params([], true)
+        @params(true, true)
+        @params(invalid, true)
+        sub test_isEmptyString(value as dynamic, expected as boolean)
+            result = Common.Util.isEmptyString(value) ' bs:disable-line
+            m.assertEqual(expected, result)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.isArray")
+        '=====================================================
+
+        @it("Common.Util.isArray returns expected boolean value")
+        @params(invalid, false)
+        @params(" ", false)
+        @params(-1, false)
+        @params(1, false)
+        @params({}, false)
+        @params([], true)
+        @params([1, 2, 3], true)
+        @params(true, false)
+        sub test_isArray(value as dynamic, expected as boolean)
+            result = Common.Util.isArray(value) ' bs:disable-line
+            m.assertEqual(expected, result)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.isNonEmptyArray")
+        '=====================================================
+
+        @it("Common.Util.isNonEmptyArray returns expected boolean value")
+        @params(invalid, false)
+        @params(" ", false)
+        @params(1, false)
+        @params([], false)
+        @params([1, 2, 3], true)
+        @params([" "], true)
+        @params([{ a: 1 }], true)
+        @params([true, false], true)
+        @params([invalid], true)
+        @params({}, false)
+        @params({ a: 1 }, false)
+        @params(true, false)
+        sub test_isNonEmptyArray(value as dynamic, expected as boolean)
+            result = Common.Util.isNonEmptyArray(value) ' bs:disable-line
+            m.assertEqual(expected, result)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.isNode")
+        '=====================================================
+
+        @it("Common.Util.isNode returns false for non-node values")
+        @params(invalid, false)
+        @params(" ", false)
+        @params(-1, false)
+        @params(1, false)
+        @params({}, false)
+        @params([], false)
+        @params(true, false)
+        sub test_isNode(value as dynamic, expected as boolean)
+            result = Common.Util.isNode(value) ' bs:disable-line
+            m.assertEqual(expected, result)
+        end sub
+
+        @it("Common.Util.isNode returns true for node values")
+        function test_isNode_withRealNode() as object
+            node = createObject("roSGNode", "ContentNode")
+            result = Common.Util.isNode(node) ' bs:disable-line
+            m.assertTrue(result, `Should return true for roSGNode`)
+            return invalid
+        end function
+
+        '=====================================================
+        @describe("Testing Common.Util.isEmpty")
+        '=====================================================
+
+        @it("Common.Util.isEmpty returns true if the value has a count of 0")
+        @params([], true)
+        @params([1, 2, 3], false)
+        @params({}, true)
+        @params({ "a": 1, "b": 2, "c": 3 }, false)
+        @params("", true)
+        @params("abc", false)
+        sub test_isEmpty(value as dynamic, expected as boolean)
+            result = Common.Util.isEmpty(value) ' bs:disable-line
+            m.assertEqual(result, expected, `Expected ${expected} but got ${result}`)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.isAssocArray")
+        '=====================================================
+
+        @it("Common.Util.isAssocArray returns expected boolean value")
+        @params(invalid, false)
+        @params(" ", false)
+        @params(-1, false)
+        @params(1, false)
+        @params({}, true)
+        @params({ a: 1 }, true)
+        @params([], false)
+        @params(true, false)
+        sub test_isAssocArray(value as dynamic, expected as boolean)
+            result = Common.Util.isAssocArray(value) ' bs:disable-line
+            m.assertEqual(expected, result)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.getCount")
+        '=====================================================
+
+        @it("Common.Util.getCount returns the count of an array, associative array, or string")
+        @params([], 0)
+        @params([1, 2, 3], 3)
+        @params({ "a": 1, "b": 2, "c": 3 }, 3)
+        @params({}, 0)
+        @params("abc", 3)
+        @params("", 0)
+        sub test_getCount(value as dynamic, expected as integer)
+            result = Common.Util.getCount(value) ' bs:disable-line
+            m.assertEqual(result, expected, `Expected ${expected} but got ${result}`)
+        end sub
+
+        @it("Common.Util.getCount returns child count for nodes")
+        function test_getCount_withNode() as object
+            node = createObject("roSGNode", "ContentNode")
+            node.appendChild(createObject("roSGNode", "ContentNode"))
+            node.appendChild(createObject("roSGNode", "ContentNode"))
+
+            result = Common.Util.getCount(node) ' bs:disable-line
+            m.assertEqual(result, 2, `Should return 2 for node with 2 children`)
+
+            return invalid
+        end function
+
+        '=====================================================
+        @describe("Testing Common.Util.stripHtmlTags")
+        '=====================================================
+
+        @it("Common.Util.stripHtmlTags removes HTML tags from text")
+        @params("", "")
+        @params("plain text", "plain text")
+        @params("<p>text</p>", "text")
+        @params("<div><span>nested</span></div>", "nested")
+        @params("<a href='link'>click</a>", "click")
+        sub test_stripHtmlTags(value as string, expected as string)
+            result = Common.Util.stripHtmlTags(value) ' bs:disable-line
+            m.assertEqual(result, expected, `Expected ${expected} but got ${result}`)
+        end sub
+
+        @it("Common.Util.stripHtmlTags decodes HTML entities")
+        @params("&amp;", "&")
+        @params("&lt;", "<")
+        @params("&gt;", ">")
+        @params("&nbsp;", " ")
+        @params("&apos;", "'")
+        sub test_stripHtmlTags_entities(value as string, expected as string)
+            result = Common.Util.stripHtmlTags(value) ' bs:disable-line
+            m.assertEqual(result, expected, `Expected ${expected} but got ${result}`)
+        end sub
+
+        '=====================================================
+        @describe("Testing Common.Util.buildQueryString")
+        '=====================================================
+
+        @it("Common.Util.buildQueryString returns empty string for invalid params")
+        function test_buildQueryString_invalid() as object
+            result = Common.Util.buildQueryString(invalid) ' bs:disable-line
+            m.assertEqual(result, "", `Should return empty string for invalid`)
+            return invalid
+        end function
+
+        @it("Common.Util.buildQueryString returns empty string for empty params")
+        function test_buildQueryString_empty() as object
+            result = Common.Util.buildQueryString({}) ' bs:disable-line
+            m.assertEqual(result, "", `Should return empty string for empty params`)
+            return invalid
+        end function
+
+        @it("Common.Util.buildQueryString builds query string from single param")
+        function test_buildQueryString_single() as object
+            result = Common.Util.buildQueryString({ key: "value" }) ' bs:disable-line
+            m.assertEqual(result, "key=value", `Should return key=value`)
+            return invalid
+        end function
+
+        @it("Common.Util.buildQueryString builds query string from multiple params")
+        function test_buildQueryString_multiple() as object
+            result = Common.Util.buildQueryString({ a: "1", b: "2" }) ' bs:disable-line
+            m.assertTrue(result.instr("a=1") > -1, `Should contain a=1`)
+            m.assertTrue(result.instr("b=2") > -1, `Should contain b=2`)
+            m.assertTrue(result.instr("&") > -1, `Should contain &`)
+            return invalid
+        end function
+
+        @it("Common.Util.buildQueryString converts non-string values to string")
+        function test_buildQueryString_converts() as object
+            result = Common.Util.buildQueryString({ num: 123, flag: true }) ' bs:disable-line
+            m.assertTrue(result.instr("num=123") > -1, `Should contain num=123`)
+            m.assertTrue(result.instr("flag=true") > -1, `Should contain flag=true`)
+            return invalid
+        end function
+
+        @it("Common.Util.buildQueryString skips invalid values")
+        function test_buildQueryString_skipsInvalid() as object
+            result = Common.Util.buildQueryString({ valid: "yes", invalid_key: invalid }) ' bs:disable-line
+            m.assertTrue(result.instr("valid=yes") > -1, `Should contain valid=yes`)
+            m.assertEqual(result.instr("invalid_key"), -1, `Should not contain invalid_key`)
+            return invalid
+        end function
+    end class
+end namespace

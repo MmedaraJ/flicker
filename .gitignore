@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+*.zip
+
+# Environment files
+.env
+.env.local
+
+# Generated secrets
+source/config/secrets.bs
+
+# OS files
+.DS_Store
+
+# Logs
+*.log

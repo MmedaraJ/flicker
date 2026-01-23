@@ -1,0 +1,29 @@
+sub init()
+    m.top.functionName = "getContent"
+end sub
+
+sub getContent()
+    contentNode = createObject("roSGNode", "contentNode")
+    contentNode.update({
+        currentRowIndex: 0,
+        hasMoreRows: true
+    }, true)
+
+    batch = HomePageConfig.getRowBatch(0)
+    rows = batch?.rows
+    rowNodes = RowLoaderService.loadRows(rows)
+
+    if not Common.Util.isNonEmptyArray(rowNodes) then return
+
+    for each rowNode in rowNodes
+        contentNode.appendChild(rowNode)
+    end for
+
+    if Common.Util.isArray(rows)
+        contentNode.currentRowIndex = rows.count()
+        contentNode.hasMoreRows = batch.hasMore ?? false
+    end if
+
+    m.top.content = contentNode
+    m.top.loading = false
+end sub

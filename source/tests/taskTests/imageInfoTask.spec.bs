@@ -1,0 +1,73 @@
+namespace ImageInfoTaskTests
+    @SGNode("imageInfoTask")
+    @suite("ImageInfoTask tests")
+    class ImageInfoTaskTestSuite extends Rooibos.BaseTestSuite
+        '==============================================
+        @describe("init()")
+        '==============================================
+
+        @it("sets functionName to getImageInfo")
+        function test_init_setsFunctionName() as object
+            ' bs:disable-next-line
+            init()
+
+            m.assertEqual(m.node.top.functionName, "getImageInfo", `functionName should be set to "getImageInfo", got ${m.node.top.functionName}`)
+
+            return invalid
+        end function
+
+        '==============================================
+        @describe("getImageInfo()")
+        '==============================================
+
+        @it("returns early when imageId is empty")
+        @params(invalid, "flickr")
+        @params("", "flickr")
+        function test_getImageInfo_emptyImageId(imageId as dynamic, provider as string) as object
+            m.node.top.imageId = imageId
+            m.node.top.provider = provider
+            m.node.top.imageInfo = invalid
+
+            ' bs:disable-next-line
+            getImageInfo()
+
+            m.assertInvalid(m.node.top.imageInfo, `imageInfo should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("returns early when provider is empty")
+        @params("12345", invalid)
+        @params("12345", "")
+        function test_getImageInfo_emptyProvider(imageId as string, provider as dynamic) as object
+            m.node.top.imageId = imageId
+            m.node.top.provider = provider
+            m.node.top.imageInfo = invalid
+
+            ' bs:disable-next-line
+            getImageInfo()
+
+            m.assertInvalid(m.node.top.imageInfo, `imageInfo should remain invalid`)
+
+            return invalid
+        end function
+
+        @it("returns early when both imageId and provider are empty")
+        @params(invalid, invalid)
+        @params("", "")
+        @params(invalid, "")
+        @params("", invalid)
+        function test_getImageInfo_bothEmpty(imageId as dynamic, provider as dynamic) as object
+            m.node.top.imageId = imageId
+            m.node.top.provider = provider
+            m.node.top.imageInfo = invalid
+
+            ' bs:disable-next-line
+            getImageInfo()
+
+            m.assertInvalid(m.node.top.imageInfo, `imageInfo should remain invalid`)
+
+            return invalid
+        end function
+    end class
+end namespace

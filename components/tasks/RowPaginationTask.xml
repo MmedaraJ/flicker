@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="rowPaginationTask" extends="Task">
+    <script type="text/brightscript" uri="pkg:/source/config/homePageConfig.bs" />
+    <script type="text/brightscript" uri="pkg:/source/config/flickrConfig.bs" />
+    <script type="text/brightscript" uri="pkg:/source/config/secrets.bs" />
+    <script type="text/brightscript" uri="pkg:/source/network/networkService.bs" />
+    <script type="text/brightscript" uri="pkg:/source/models/imageModel.bs" />
+    <script type="text/brightscript" uri="pkg:/source/providers/flickrProvider.bs" />
+    <script type="text/brightscript" uri="pkg:/source/providers/providerFactory.bs" />
+    <script type="text/brightscript" uri="pkg:/source/services/imageService.bs" />
+
+    <interface>
+        <field id="action" type="string" />
+        <field id="params" type="assocarray" />
+        <field id="page" type="integer" value="1" />
+        <field id="images" type="array" />
+    </interface>
+</component>

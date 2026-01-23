@@ -1,0 +1,156 @@
+namespace Common.Util
+    ' /**
+    ' *  Check if value is invalid
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isInvalid(obj as dynamic) as boolean
+        return obj = invalid or type(obj) = "<uninitialized>"
+    end function
+
+    ' /**
+    ' *  Check if value is type string
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isString(obj as dynamic) as boolean
+        if isInvalid(obj) then return false
+        objType = Type(obj)
+        return (objType = "roString" or objType = "String")
+    end function
+
+    ' /**
+    ' *  Check if value is type string and is empty
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isEmptyString(obj as dynamic) as boolean
+        isAString = isString(obj)
+        if not isAString then return true
+
+        return len(obj) = 0
+    end function
+
+    ' /**
+    ' *  Check if value is type array
+    ' *
+    ' *  @param {dynamic} value to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isArray(obj as dynamic) as boolean
+        if isInvalid(obj) then return false
+        typeValue = type(obj)
+        return typeValue = "roArray" or typeValue = "Array"
+    end function
+
+    ' /**
+    ' *  Check if value is type array and is not empty
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isNonEmptyArray(obj as dynamic) as boolean
+        return isArray(obj) and not isEmpty(obj)
+    end function
+
+    ' /**
+    ' *  Check if value is type node
+    ' *
+    ' *  @param {dynamic} value to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isNode(obj as dynamic) as boolean
+        if isInvalid(obj) then return false
+        typeValue = type(obj)
+        return typeValue = "roSGNode" or typeValue = "SGNode"
+    end function
+
+    ' /**
+    ' *  Returns true if the value is an array, associative array, node, or string and has a count of 0
+    ' *
+    ' *  @param {object} value to check
+    ' *
+    ' *  @returns {boolean} - true if the value is an array, associative array, node, or string and has a count of 0
+    ' */
+    function isEmpty(value as object) as boolean
+        return getCount(value) = 0
+    end function
+
+    ' /**
+    ' *  Check if value is type associative array
+    ' *
+    ' *  @param {dynamic} obj to check
+    ' *
+    ' *  @returns {boolean}
+    ' */
+    function isAssocArray(obj as dynamic) as boolean
+        if isInvalid(obj) then return false
+        typeValue = type(obj)
+        return typeValue = "roAssociativeArray" or typeValue = "AssociativeArray"
+    end function
+
+    ' /**
+    ' *  Returns the count of an array, associative array, node, or string
+    ' *
+    ' * @param {object} value to check
+    ' *
+    ' * @returns {integer} - the count of the value or 0 if the value is invalid
+    ' */
+    function getCount(value as object) as integer
+        if isNode(value) then return value.getChildCount()
+        if isArray(value) or isAssocArray(value) then return value.count()
+        if isString(value) then return Len(value)
+        return 0
+    end function
+
+    ' /**
+    ' *  Strip HTML tags from text
+    ' *
+    ' *  @param {string} text to strip
+    ' *
+    ' *  @returns {string}
+    ' */
+    function stripHtmlTags(text as string) as string
+        if isEmptyString(text) then return ""
+
+        regex = createObject("roRegex", "<[^>]+>", "gi")
+        result = regex.replaceAll(text, "")
+
+        result = result.replace("&amp;", "&")
+        result = result.replace("&lt;", "<")
+        result = result.replace("&gt;", ">")
+        result = result.replace("&quot;", chr(34))
+        result = result.replace("&apos;", "'")
+        result = result.replace("&nbsp;", " ")
+
+        return result
+    end function
+
+    ' /**
+    ' *  Build a query string from an associative array of params
+    ' *
+    ' *  @param {object} params - associative array of key-value pairs
+    ' *
+    ' *  @returns {string} - query string (without leading ?)
+    ' */
+    function buildQueryString(params as object) as string
+        if isInvalid(params) then return ""
+
+        parts = []
+        for each key in params
+            value = params[key]
+            if not isInvalid(value) then parts.push(key + "=" + value.toStr())
+        end for
+        
+        return parts.join("&")
+    end function
+end namespace
