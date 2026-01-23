@@ -112,14 +112,15 @@ sub onPaginationComplete(event as object)
     if m.content = invalid then return
     images = event.getData()
 
-    if images <> invalid and images.count() > 0
+    if Common.Util.isNonEmptyArray(images)
+        imagesCount = images.count()
         rowNode = m.content.getChild(m.paginatingRowIndex)
 
         if rowNode <> invalid
             currentCount = rowNode.getChildCount()
             remainingSlots = HomePageConfig.MAX_PER_ROW - currentCount
 
-            for i = 0 to images.count() - 1
+            for i = 0 to imagesCount - 1
                 if i >= remainingSlots then exit for
 
                 imageNode = createObject("roSGNode", "contentNode")
@@ -128,7 +129,7 @@ sub onPaginationComplete(event as object)
             end for
 
             rowNode.currentPage = rowNode.currentPage + 1
-            rowNode.hasMore = images.count() >= HomePageConfig.PAGE_SIZE and rowNode.getChildCount() < HomePageConfig.MAX_PER_ROW
+            rowNode.hasMore = imagesCount >= HomePageConfig.PAGE_SIZE and rowNode.getChildCount() < HomePageConfig.MAX_PER_ROW
         end if
     end if
 

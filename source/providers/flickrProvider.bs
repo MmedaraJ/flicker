@@ -8,6 +8,8 @@ namespace FlickrProvider
             return _buildApiUrl(FlickrConfig.Methods.GET_POPULAR, { user_id: params.user_id }, page)
         else if method = FlickrConfig.MethodNames.PEOPLE
             return _buildApiUrl(FlickrConfig.Methods.PEOPLE_PHOTOS, { user_id: params.user_id }, page)
+        else if method = FlickrConfig.MethodNames.INTERESTINGNESS
+            return _buildApiUrl(FlickrConfig.Methods.INTERESTINGNESS, { date: params.date }, page)
         end if
 
         return ""

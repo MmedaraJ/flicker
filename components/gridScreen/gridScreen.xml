@@ -2,6 +2,7 @@
 <component name="gridScreen" extends="Group" initialFocus="RowList">
     <script type="text/brightscript" uri="pkg:/source/config/homePageConfig.bs" />
     <script type="text/brightscript" uri="pkg:/components/gridScreen/gridScreenConfig.bs" />
+    <script type="text/brightscript" uri="pkg:/source/utils/common.bs" />
 
 	<interface>
         <field id="content" type="node" alias="RowList.content" onChange="onContentChange" />

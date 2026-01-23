@@ -23,6 +23,14 @@ namespace HomePageConfig
 
     function getRows() as object
         return [
+            { title: "Interesting: Jan 20, 2025", action: "flickr.interestingness", params: { date: "2025-01-20" } },
+            { title: "Interesting: Jan 15, 2025", action: "flickr.interestingness", params: { date: "2025-01-15" } },
+            { title: "Interesting: Jan 10, 2025", action: "flickr.interestingness", params: { date: "2025-01-10" } },
+            { title: "Interesting: Jan 5, 2025", action: "flickr.interestingness", params: { date: "2025-01-05" } },
+            { title: "Interesting: Jan 1, 2025", action: "flickr.interestingness", params: { date: "2025-01-01" } },
+            { title: "Interesting: Dec 31, 2024", action: "flickr.interestingness", params: { date: "2024-12-31" } },
+            { title: "Interesting: Dec 26, 2024", action: "flickr.interestingness", params: { date: "2024-12-26" } },
+            { title: "Interesting: Jan 1, 2025", action: "flickr.interestingness", params: { date: "2025-12-01" } },
             { title: "Recent Photos", action: "flickr.recent" },
             { title: "Popular from NASA", action: "flickr.popular", params: { user_id: "24662369@N07" } },
             { title: "Popular from Smithsonian", action: "flickr.popular", params: { user_id: "25053835@N03" } },

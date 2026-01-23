@@ -9,6 +9,7 @@ namespace FlickrConfig
     function getApiKey() as string
         return Secrets.getFlickrApiKey()
     end function
+    
     namespace Methods
         const GET_RECENT = "flickr.photos.getRecent"
         const SEARCH = "flickr.photos.search"

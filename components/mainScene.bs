@@ -2,6 +2,7 @@ sub init()
     m.top.backgroundURI = ""
     m.top.backgroundColor = "0x000000FF"
     m.loadingIndicator = m.top.findNode("loadingIndicator")
+    
     ScreenStack.init()
     GridScreen.show()
     ContentTask.start()
