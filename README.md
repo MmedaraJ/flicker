@@ -4,6 +4,8 @@
 
 A Roku channel for browsing Flickr's photo library. Features a grid based home screen with categorized rows and a detail view for individual photos.
 
+https://github.com/user-attachments/assets/1059866e-7588-41b9-b28e-8ce778f9e465
+
 ## Setup
 
 1. Clone the repository
