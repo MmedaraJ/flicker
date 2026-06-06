@@ -1,4 +1,4 @@
-**AI helped in producing parts of this document**
+**AI helped in producing parts of this README**
 
 # Flicker
 
